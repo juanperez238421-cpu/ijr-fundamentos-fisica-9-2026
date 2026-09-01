@@ -1,0 +1,9 @@
+/* Theory Lab V6 runtime QA fixes */
+.tv6-pe-bar,.tv6-ke-bar{transform-box:fill-box;transform-origin:center bottom}
+.tv6-orbiting{transform-box:view-box;transform-origin:430px 245px!important}
+.tv6-fluid-particle{r:6px}
+.tv6-lab[data-mode="area"] .tv6-area-fill,.tv6-lab[data-mode="area"] .tv6-sweep{opacity:1}
+.tv6-lab[data-mode="components"] [data-dyn-par-label],.tv6-lab[data-mode="components"] [data-dyn-perp-label]{font-size:13px}
+.tv6-lab[data-tv6="dynamics"] .tv6-stage{padding-top:4px}
+.tv6-lab[data-tv6="fluids"] .tv6-stage{min-height:535px}
+@media(max-width:760px){.tv6-lab[data-tv6="fluids"] .tv6-stage{min-height:405px}.tv6-slider-row{grid-template-columns:1fr auto}.tv6-slider-row input[type="range"]{grid-column:1/-1}}
