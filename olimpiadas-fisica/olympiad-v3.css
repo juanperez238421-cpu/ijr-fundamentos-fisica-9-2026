@@ -1,0 +1,32 @@
+/* Physics Olympiad Visual QA V3 — larger, problem-specific diagrams */
+.visual-stage{min-height:340px;padding:12px;background:linear-gradient(180deg,#fff,#f8fbfd)}
+.physics-visual.compact .visual-stage{min-height:255px}
+.physics-svg{width:100%;height:auto;max-height:340px;padding:4px}
+.physics-visual.compact .physics-svg{max-height:255px}
+.physics-svg text{font-size:13px;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}
+.physics-svg .diagram-equation{font-size:14px;font-weight:850;fill:#163d68}
+.physics-svg .force-label,.physics-svg .angle-label{font-size:14px;font-weight:850;fill:#26384c}
+.physics-svg .caption-text{font-size:12.5px;font-weight:800}
+.question-body-grid.has-visual{grid-template-columns:minmax(0,1.05fr) minmax(330px,.95fr);gap:18px}
+.question-visual{min-width:330px}
+.question-visual .physics-visual{margin:10px 0 0}
+.physics-svg .marker-primary{fill:#245b9e}.physics-svg .marker-secondary{fill:#bd8b2f}.physics-svg .marker-accent{fill:#b42318}
+.physics-svg .v-arrow{fill:none;stroke-width:3.4;stroke-linecap:round}.physics-svg .resultant{stroke:#17805c}.physics-svg .accent{stroke:#b42318}
+.physics-svg .angle-arc{fill:none;stroke:#64748b;stroke-width:1.8}.physics-svg .vector-triangle{fill:rgba(36,91,158,.07);stroke:#587a9b;stroke-width:2}
+.physics-svg .object,.physics-svg .cart,.physics-svg .car{fill:#e6edf4;stroke:#536d86;stroke-width:2}.physics-svg .car{fill:#f3c66f}
+.physics-svg .river,.physics-svg .water{fill:rgba(67,145,196,.23);stroke:#5c8eae;stroke-width:1.5}.physics-svg .bank{stroke:#596b7c;stroke-width:5}
+.physics-svg .boat{fill:#f4bd5f;stroke:#8a6420;stroke-width:2}.physics-svg .zero-line,.physics-svg .horizontal,.physics-svg .measure,.physics-svg .depth{stroke:#8ea0b4;stroke-width:1.5}
+.physics-svg .track-line,.physics-svg .track-circle,.physics-svg .loop-path,.physics-svg .wheel{fill:none;stroke:#586f86;stroke-width:3}.physics-svg .runner-a{fill:#245b9e}.physics-svg .runner-b{fill:#bd8b2f}
+.physics-svg .pulley{fill:#e8edf2;stroke:#60758b;stroke-width:3}.physics-svg .rope{stroke:#64748b;stroke-width:3;fill:none}.physics-svg .block{fill:#f6c565;stroke:#8a6420;stroke-width:2.2}
+.physics-svg .spring{fill:none;stroke:#245b9e;stroke-width:3}.physics-svg .building{fill:#eef2f6;stroke:#77889a;stroke-width:2}.physics-svg .person{fill:#f3c66f;stroke:#8a6420;stroke-width:2}
+.physics-svg .area-fill{fill:rgba(36,91,158,.10);stroke:none}.physics-svg .point{fill:#245b9e}.physics-svg .secondary-stroke{stroke:#bd8b2f!important}.physics-svg .primary-stroke{stroke:#245b9e!important}
+.physics-svg .secondary-fill{fill:#bd8b2f!important}.physics-svg .explosion-core{fill:#f4bd5f;stroke:#b46c1a;stroke-width:3}.physics-svg .mass-dot{fill:#245b9e;stroke:#163d68;stroke-width:2}
+.physics-svg .banked-road{fill:#e9eef3;stroke:#677a8d;stroke-width:2}.physics-svg .radius-line{stroke:#778da3;stroke-width:2}.physics-svg .escape-path{stroke:#245b9e;stroke-width:2.5;stroke-dasharray:6 5}
+.physics-svg .person-head{fill:#f3c66f;stroke:#755a2b;stroke-width:2}.physics-svg .person-line{stroke:#536d86;stroke-width:5;stroke-linecap:round}.physics-svg .spin-arrow,.physics-svg .rotation-arrow{fill:none;stroke:#245b9e;stroke-width:3}.physics-svg .spin-arrow.fast{stroke:#bd8b2f;stroke-width:4}
+.physics-svg .wheel{fill:#f6f8fa}.physics-svg .hub,.physics-svg .contact,.physics-svg .pivot-dot{fill:#245b9e}.physics-svg .door{fill:#eef2f6;stroke:#687b8d;stroke-width:3}.physics-svg .hinge{fill:#475569}
+.physics-svg .tank,.physics-svg .glass{fill:none;stroke:#60758b;stroke-width:4}.physics-svg .surface{stroke:#4b83a5;stroke-width:2}.physics-svg .probe,.physics-svg .orifice{fill:#245b9e}.physics-svg .jet{stroke:#3f8db8;stroke-width:4}.physics-svg .ice{fill:#eef9ff;stroke:#74a9c5;stroke-width:2}
+.physics-svg .fluid-pipe{stroke:#617d96;stroke-width:5;fill:none}.physics-svg .piston{fill:#d5dde6;stroke:#5b7086;stroke-width:2}.physics-svg .fluid-fill{fill:rgba(59,130,196,.30)}
+.physics-svg .motion-arc{fill:none;stroke-width:3;marker-end:none}
+@media(max-width:1050px){.question-body-grid.has-visual{grid-template-columns:1fr}.question-visual{min-width:0;max-width:720px}.visual-stage{min-height:320px}.physics-svg{max-height:320px}}
+@media(max-width:720px){.visual-stage{min-height:280px;padding:6px}.physics-visual.compact .visual-stage{min-height:225px}.physics-svg{max-height:285px}.physics-visual.compact .physics-svg{max-height:230px}.physics-svg text{font-size:12px}.physics-svg .diagram-equation,.physics-svg .force-label{font-size:12.5px}}
+@media(prefers-reduced-motion:reduce){.physics-svg *{animation:none!important}}
