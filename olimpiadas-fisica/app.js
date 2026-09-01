@@ -1,6 +1,7 @@
 (() => {
   const cfg = window.PHYSICS_OLYMPIAD_CONFIG;
   const data = window.PHYSICS_OLYMPIAD_DATA;
+  const visuals = window.PhysicsOlympiadVisuals;
   const $ = (id) => document.getElementById(id);
   const state = { token: null, profile: null, progress: new Map(), solved: new Set(), guest: false, activeTopic: null };
 
@@ -16,6 +17,14 @@
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>'"]/g, (ch) => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+  }
+
+  function totalQuestions() {
+    return data.topics.reduce((sum, topic) => sum + Number(topic.questions?.length || 0), 0) || Number(data.competition?.questionCount || 80);
+  }
+
+  function renderVisual(config, compact = false) {
+    return visuals?.render ? visuals.render(config, compact) : "";
   }
 
   async function api(payload) {
@@ -68,7 +77,7 @@
 
   function updateGlobalProgress(payload) {
     const correct = Number(payload?.correct || 0);
-    const total = Number(payload?.total || 48);
+    const total = Number(payload?.total || totalQuestions());
     const percent = Number(payload?.percent || 0);
     $("globalPercent").textContent = `${percent}%`;
     $("globalProgressBar").style.width = `${percent}%`;
@@ -80,8 +89,8 @@
     switchButton.classList.remove("hidden");
     if (state.guest) {
       sessionBadge.textContent = "Guest · theory only";
-      $("identitySummary").textContent = "Modo invitado · teoría y ejemplos disponibles · registra un participante para validar workshops.";
-      updateGlobalProgress({correct:0,total:48,percent:0});
+      $("identitySummary").textContent = "Modo invitado · teoría, laboratorios visuales y ejemplos disponibles · registra un participante para validar workshops.";
+      updateGlobalProgress({correct:0,total:totalQuestions(),percent:0});
     } else if (state.profile) {
       sessionBadge.textContent = `${state.profile.participant_code} · ${state.profile.group_code}`;
       $("identitySummary").textContent = `${state.profile.full_name} · ${state.profile.group_code} · Participant ID ${state.profile.participant_code}`;
@@ -104,10 +113,12 @@
   }
 
   function topicProgressText(slug) {
+    const topic = data.topics.find(t => t.slug === slug);
+    const total = Number(topic?.questions?.length || 10);
     if (state.guest) return "theory";
     const row = state.progress.get(slug);
-    if (!row) return "0/6";
-    return row.completed ? "6/6 ✓" : `${row.correct_count}/${row.total_count}`;
+    if (!row) return `0/${total}`;
+    return row.completed ? `${total}/${total} ✓` : `${row.correct_count}/${row.total_count || total}`;
   }
 
   function renderTopicNav() {
@@ -129,12 +140,22 @@
     window.scrollTo({top: Math.max(0, $("strategyTitle").offsetTop - 70), behavior: "smooth"});
   }
 
+  function renderContestUse(topic) {
+    if (!topic.contestUse) return "";
+    const entries = [
+      ["Qualifier", topic.contestUse.qualifier],
+      ["Semifinal", topic.contestUse.semifinal],
+      ["Final", topic.contestUse.final]
+    ];
+    return `<div class="contest-use-grid">${entries.map(([phase,text]) => `<article><span>${phase}</span><p>${escapeHtml(text)}</p></article>`).join("")}</div>`;
+  }
+
   function renderTopic(topic) {
     const progress = state.progress.get(topic.slug);
     const correctCount = Number(progress?.correct_count || 0);
-    const totalCount = Number(progress?.total_count || 6);
+    const totalCount = Number(progress?.total_count || topic.questions.length);
     const guestNotice = state.guest ? '<div class="guest-lock"><strong>Workshop locked in guest mode.</strong> Registra un participante para validar respuestas y guardar progreso.</div>' : "";
-    const methodItems = [
+    const methodItems = topic.decisionSteps || [
       "Identifica sistema, datos e incógnita.",
       "Dibuja y elige el principio físico.",
       "Modela simbólicamente antes de sustituir.",
@@ -149,33 +170,47 @@
       </header>
 
       <section class="topic-section">
-        <h3>Repaso teórico · Theory review</h3>
+        <div class="section-title-row"><div><p class="micro-kicker">CONCEPTUAL FOUNDATION</p><h3>Repaso teórico · Theory review</h3></div><span class="section-tag">Concept → model</span></div>
         <div class="theory-grid">${topic.theory.map(item => `<article class="theory-card"><strong>${escapeHtml(item.title)}</strong><p>${item.text}</p></article>`).join("")}</div>
+      </section>
+
+      <section class="topic-section olympiad-lab-section">
+        <div class="section-title-row"><div><p class="micro-kicker">OLYMPIAD CONCEPT LAB</p><h3>De la teoría a una decisión de competencia</h3></div><span class="section-tag">Animated reasoning</span></div>
+        <div class="concept-lab-grid">
+          <div>${renderVisual(topic.visual)}</div>
+          <div class="olympiad-theory-grid">${(topic.olympiadTheory || []).map(item => `<article class="olympiad-theory-card"><strong>${escapeHtml(item.title)}</strong><p>${item.text}</p></article>`).join("")}</div>
+        </div>
+        ${renderContestUse(topic)}
       </section>
 
       <section class="topic-section">
         <h3>Technical toolkit · fórmulas que debes interpretar</h3>
+        <p class="section-intro">No memorices una lista aislada: identifica qué hipótesis hace válida cada ecuación y qué variable conviene comparar por proporciones.</p>
         <div class="formula-grid">${topic.formulas.map(f => `<div class="formula-chip">${f}</div>`).join("")}</div>
       </section>
 
       <section class="topic-section split-grid">
         <div class="trap-box"><h4>Conceptual traps</h4><ul>${topic.traps.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
-        <div class="method-box"><h4>Olympiad method</h4><ul>${methodItems.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul></div>
+        <div class="method-box"><h4>Olympiad decision checklist</h4><ol>${methodItems.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ol></div>
       </section>
 
       <section class="topic-section">
         <h3>Worked olympiad-style example</h3>
-        <div class="worked-example">
-          <h4>${escapeHtml(topic.example.title)}</h4>
-          <p class="example-prompt">${topic.example.prompt}</p>
-          <ol class="step-list">${topic.example.steps.map(x => `<li>${x}</li>`).join("")}</ol>
-          <div class="example-answer">${topic.example.answer}</div>
+        <div class="worked-example-grid">
+          <div class="worked-example">
+            <h4>${escapeHtml(topic.example.title)}</h4>
+            <p class="example-prompt">${topic.example.prompt}</p>
+            <ol class="step-list">${topic.example.steps.map(x => `<li>${x}</li>`).join("")}</ol>
+            <div class="example-answer">${topic.example.answer}</div>
+          </div>
+          <div class="example-visual-wrap">${renderVisual(topic.visual, true)}<div class="visual-reading"><strong>Read the figure:</strong><span>${escapeHtml(topic.problemLens || "Relaciona el diagrama con el principio físico antes de sustituir valores.")}</span></div></div>
         </div>
       </section>
 
       <section class="topic-section">
-        <div class="workshop-head"><div><h3>Workshop · 6 olympiad-style challenges</h3><p>Responde, valida y analiza el feedback. Una respuesta correcta desbloquea la solución razonada.</p></div><span class="topic-progress-pill">${state.guest ? "Guest mode" : `${correctCount}/${totalCount} correctas`}</span></div>
+        <div class="workshop-head"><div><p class="micro-kicker">CORE + EXTENSION SET</p><h3>Workshop · ${topic.questions.length} olympiad-style challenges</h3><p>Cada reto incluye intención conceptual; los problemas seleccionados incorporan diagramas animados. Una respuesta correcta desbloquea la solución razonada.</p></div><span class="topic-progress-pill">${state.guest ? "Guest mode" : `${correctCount}/${totalCount} correctas`}</span></div>
         ${guestNotice}
+        <div class="workshop-rule"><strong>Recommended routine:</strong><span>diagram → principle → symbolic model → option/result → dimensional and physical check.</span></div>
         <div class="question-list">${topic.questions.map((q,i) => renderQuestion(topic,q,i)).join("")}</div>
       </section>
     </article>`;
@@ -186,10 +221,17 @@
 
   function renderQuestion(topic, q, index) {
     const solved = state.solved.has(q.id);
+    const visual = q.visual ? `<div class="question-visual">${renderVisual({...q.visual,title:`${q.id} · ${q.skill}`}, true)}</div>` : "";
     return `<article class="question-card ${solved ? "solved" : ""}" id="card-${q.id}">
-      <div class="question-top"><span class="question-number">Challenge ${index+1} · ${q.id.toUpperCase()}</span><span class="question-meta"><span class="meta-chip">${escapeHtml(q.skill)}</span><span class="meta-chip">${escapeHtml(q.difficulty)}</span></span></div>
-      <div class="question-prompt">${q.prompt}</div>
-      <div class="options">${Object.entries(q.options).map(([letter,option]) => `<label class="option-label"><input type="radio" name="answer-${q.id}" value="${letter}" ${solved || state.guest ? "disabled" : ""}><span class="option-letter">${letter}</span><span>${option}</span></label>`).join("")}</div>
+      <div class="question-top"><span class="question-number">Challenge ${index+1} · ${q.id.toUpperCase()}</span><span class="question-meta"><span class="meta-chip">${escapeHtml(q.skill)}</span><span class="meta-chip difficulty-${escapeHtml(q.difficulty).toLowerCase()}">${escapeHtml(q.difficulty)}</span></span></div>
+      <div class="question-description"><strong>Olympiad focus:</strong> ${escapeHtml(q.description || topic.problemLens || "Modela antes de calcular.")}</div>
+      <div class="question-body-grid ${q.visual ? "has-visual" : ""}">
+        <div>
+          <div class="question-prompt">${q.prompt}</div>
+          <div class="options">${Object.entries(q.options).map(([letter,option]) => `<label class="option-label"><input type="radio" name="answer-${q.id}" value="${letter}" ${solved || state.guest ? "disabled" : ""}><span class="option-letter">${letter}</span><span>${option}</span></label>`).join("")}</div>
+        </div>
+        ${visual}
+      </div>
       <div class="question-actions">
         <button class="button ${solved ? "button-light" : "button-blue"}" type="button" data-check-question="${q.id}" ${solved || state.guest ? "disabled" : ""}>${solved ? "Solved ✓" : "Check answer"}</button>
         <span id="feedback-${q.id}" class="feedback">${solved ? "Validated in your saved progress." : state.guest ? "Register to validate this challenge." : "Choose one option."}</span>
