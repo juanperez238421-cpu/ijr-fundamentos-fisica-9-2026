@@ -70,5 +70,7 @@
     return "";
   }
 
-  api.renderQuestion = function(question){ return fixed(question?.id) || original(question); };
+  window.PhysicsOlympiadWorkshopVisuals = Object.freeze({
+    renderQuestion(question){ return fixed(question?.id) || original(question); }
+  });
 })();
