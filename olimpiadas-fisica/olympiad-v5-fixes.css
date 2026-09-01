@@ -1,0 +1,24 @@
+/* V5 final QA corrections: ensure all physics paths remain visible and semantically colored. */
+.workshop-svg .wv-line,
+.workshop-svg .wv-track,
+.workshop-svg .wv-trajectory,
+.workshop-svg .wv-motion,
+.workshop-svg .wv-arc{
+  stroke:#244f87;
+}
+.workshop-svg .wv-track.black,
+.workshop-svg .wv-line.black,
+.workshop-svg .wv-trajectory.black,
+.workshop-svg .wv-motion.black,
+.workshop-svg .wv-arc.black{stroke:#111827}
+.workshop-svg .wv-track.gold,
+.workshop-svg .wv-line.gold,
+.workshop-svg .wv-trajectory.gold,
+.workshop-svg .wv-motion.gold,
+.workshop-svg .wv-arc.gold{stroke:#a87420}
+.workshop-svg .wv-track.red,
+.workshop-svg .wv-line.red,
+.workshop-svg .wv-trajectory.red,
+.workshop-svg .wv-motion.red,
+.workshop-svg .wv-arc.red{stroke:#b42318}
+.workshop-svg .wv-banked{vector-effect:non-scaling-stroke}
