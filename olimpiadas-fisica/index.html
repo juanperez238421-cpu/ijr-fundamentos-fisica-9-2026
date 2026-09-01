@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Physics Olympiad Preparation Hub for Instituto Jorge Robledo: theory, olympiad strategy, worked examples and topic workshops with saved progress.">
+  <title>Physics Olympiad Preparation Hub · IJR</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://rlfxnjbqxbozjdzkbwlz.supabase.co" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="styles.css?v=20260901-v1">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script defer src="config.js?v=20260901-v1"></script>
+  <script defer src="data.js?v=20260901-v1"></script>
+  <script defer src="app.js?v=20260901-v1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Saltar al contenido</a>
+
+  <header class="topbar">
+    <a class="brand" href="../" aria-label="Volver a Fundamentos de Física">
+      <span class="brand-mark">IJR</span>
+      <span><small>Instituto Jorge Robledo · Physics</small><strong>Olympiad Preparation Hub</strong></span>
+    </a>
+    <div class="top-actions">
+      <span id="sessionBadge" class="session-badge hidden">Guest mode</span>
+      <button id="switchButton" class="button button-light hidden" type="button">Cambiar participante</button>
+      <a class="button button-dark" href="../">Physics 9 home</a>
+    </div>
+  </header>
+
+  <section id="registrationPanel" class="registration-screen">
+    <div class="registration-card">
+      <p class="eyebrow">EIA 2026 · OLYMPIAD TRAINING PATH</p>
+      <h1>Think first. Model second. Calculate last.</h1>
+      <p class="registration-lead">Ruta de preparación para estudiantes de 9°, 10° y 11°. Cada temática integra <strong>repaso teórico, técnica olímpica, errores frecuentes, ejemplo resuelto y workshop interactivo</strong>. El progreso validado se conserva en Supabase.</p>
+
+      <div class="competition-strip">
+        <div><span>Qualifier</span><strong>P = 20 + 4C − W</strong><small>Blank: 0 points</small></div>
+        <div><span>Semifinal</span><strong>Development problems</strong><small>Partial credit for procedure</small></div>
+        <div><span>Final</span><strong>Few high-complexity problems</strong><small>Reasoning + clear solution</small></div>
+      </div>
+
+      <form id="registrationForm" class="registration-form">
+        <div class="registration-grid">
+          <label>Nombre completo
+            <input id="fullName" type="text" autocomplete="name" minlength="3" maxlength="140" required placeholder="Nombre y apellido">
+          </label>
+          <label>Grado
+            <select id="gradeSelect" required>
+              <option value="">Selecciona…</option>
+              <option value="9">9°</option>
+              <option value="10">10°</option>
+              <option value="11">11°</option>
+            </select>
+          </label>
+          <label>Grupo
+            <select id="groupSelect" required disabled>
+              <option value="">Primero selecciona grado</option>
+            </select>
+          </label>
+        </div>
+        <div class="registration-actions">
+          <div>
+            <strong>Registro individual</strong>
+            <span>Tu progreso se guarda por participante y dispositivo. Puedes cambiar de participante en cualquier momento.</span>
+          </div>
+          <button id="registerButton" class="button button-dark" type="submit">Entrar y guardar progreso</button>
+        </div>
+        <p id="registrationStatus" class="inline-status" role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="guest-row">
+        <button id="guestButton" class="button button-light" type="button">Ver teoría como invitado</button>
+        <small>Modo invitado: puedes estudiar teoría y ejemplos, pero el workshop no guarda ni valida respuestas.</small>
+      </div>
+    </div>
+  </section>
+
+  <main id="mainContent" class="hub-shell hidden">
+    <section class="hero-panel">
+      <div class="hero-copy">
+        <p class="eyebrow">PHYSICS OLYMPIAD · CLASSICAL MECHANICS</p>
+        <h1>From formulas to physical reasoning.</h1>
+        <p id="identitySummary">Guest learning path</p>
+        <p>El objetivo no es memorizar más ecuaciones. Es aprender a reconocer <strong>qué principio físico gobierna una situación</strong>, construir un modelo y verificar la respuesta.</p>
+        <div class="source-note">Alcance curricular construido a partir del reglamento EIA 2026: cinemática, dinámica, energía, momentum, circular/gravitación, rotación/equilibrio y fluidos. Los ejercicios de esta página son didácticos originales o adaptados al estilo de olimpiadas, no preguntas oficiales filtradas.</div>
+      </div>
+      <div class="global-progress-card">
+        <span>Progreso del workshop</span>
+        <strong id="globalPercent">0%</strong>
+        <div class="progress-track"><span id="globalProgressBar"></span></div>
+        <small id="globalProgressCopy">0 / 48 retos validados</small>
+      </div>
+    </section>
+
+    <section class="exam-strategy" aria-labelledby="strategyTitle">
+      <div class="section-heading">
+        <p class="eyebrow">OLYMPIAD TOOLKIT</p>
+        <h2 id="strategyTitle">Cómo pensar antes de calcular</h2>
+        <p>Estas seis rutinas deben convertirse en hábito. Son útiles tanto para selección múltiple como para problemas de desarrollo.</p>
+      </div>
+      <div id="strategyGrid" class="strategy-grid"></div>
+    </section>
+
+    <section class="course-layout">
+      <aside class="topic-sidebar">
+        <div class="sidebar-head">
+          <span>8 thematic blocks</span>
+          <strong>Preparation path</strong>
+        </div>
+        <nav id="topicNav" class="topic-nav" aria-label="Temáticas de preparación"></nav>
+      </aside>
+
+      <section class="topic-stage">
+        <div id="topicContent"></div>
+      </section>
+    </section>
+
+    <footer class="footer">
+      <span>Instituto Jorge Robledo · Physics Olympiad Preparation · 2026</span>
+      <a href="../">Volver a Fundamentos de Física</a>
+    </footer>
+  </main>
+</body>
+</html>
