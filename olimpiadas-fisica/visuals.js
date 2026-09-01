@@ -1,5 +1,7 @@
 (() => {
+  let visualSeq = 0;
   const esc = (value) => String(value ?? "").replace(/[&<>\"]/g, (ch) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+  const uid = (prefix) => `${prefix}-${++visualSeq}`;
 
   function frame(inner, cfg = {}, compact = false) {
     const label = esc(cfg.title || cfg.label || "Animated physics diagram");
@@ -8,18 +10,23 @@
   }
 
   function vector(cfg, compact) {
-    const angle = Number(cfg.angle ?? (cfg.variant === "triangle-345" ? 53 : 35));
-    const rad = angle * Math.PI / 180;
+    const isPair = cfg.variant === "two-vectors";
+    const firstAngle = isPair ? 0 : Number(cfg.angle ?? (cfg.variant === "triangle-345" ? 53 : 35));
+    const secondAngle = Number(cfg.angle ?? 120);
+    const rad = firstAngle * Math.PI / 180;
+    const rad2 = secondAngle * Math.PI / 180;
     const x1 = 40, y1 = 160, len = compact ? 105 : 145;
     const x2 = x1 + len * Math.cos(rad), y2 = y1 - len * Math.sin(rad);
-    const second = cfg.variant === "two-vectors" ? `<line class="v-arrow secondary" x1="40" y1="160" x2="${40 + len * Math.cos(120*Math.PI/180)}" y2="${160 - len * Math.sin(120*Math.PI/180)}" marker-end="url(#arrowV)"/>` : "";
+    const arrow = uid("arrowV");
+    const second = isPair ? `<line class="v-arrow secondary pulse-arrow" x1="40" y1="160" x2="${40 + len * Math.cos(rad2)}" y2="${160 - len * Math.sin(rad2)}" marker-end="url(#${arrow})"/><text x="${Math.max(18,40 + len * Math.cos(rad2) - 10)}" y="${Math.max(24,160 - len * Math.sin(rad2) - 8)}">B</text>` : "";
     return frame(`<svg viewBox="0 0 260 200" class="physics-svg">
-      <defs><marker id="arrowV" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
+      <defs><marker id="${arrow}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
       <line class="axis" x1="25" y1="160" x2="235" y2="160"/><line class="axis" x1="40" y1="180" x2="40" y2="20"/>
-      <line class="component dashed" x1="40" y1="160" x2="${x2}" y2="160"/><line class="component dashed" x1="${x2}" y1="160" x2="${x2}" y2="${y2}"/>
-      <line class="v-arrow primary pulse-arrow" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#arrowV)"/>${second}
+      ${isPair ? "" : `<line class="component dashed" x1="40" y1="160" x2="${x2}" y2="160"/><line class="component dashed" x1="${x2}" y1="160" x2="${x2}" y2="${y2}"/>`}
+      <line class="v-arrow primary pulse-arrow" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#${arrow})"/>${second}
       <circle class="moving-dot" cx="${x2}" cy="${y2}" r="5"/>
       <text x="${Math.min(205,x2+8)}" y="${Math.max(28,y2-8)}">A</text><text x="190" y="178">x</text><text x="22" y="32">y</text>
+      ${isPair ? `<text class="caption-text" x="150" y="28" text-anchor="middle">angle = ${esc(secondAngle)}°</text>` : ""}
       ${cfg.label ? `<text class="caption-text" x="125" y="28" text-anchor="middle">${esc(cfg.label)}</text>` : ""}
     </svg>`, cfg, compact);
   }
@@ -27,14 +34,16 @@
   function kinematics(cfg, compact) {
     const projectile = cfg.variant === "projectile" || cfg.variant === "river";
     if (projectile) {
+      const arrow = uid("arrowK");
+      const riverLabel = cfg.variant === "river" ? "vector addition: boat + current" : "shared time, independent axes";
       return frame(`<svg viewBox="0 0 300 190" class="physics-svg">
-        <defs><marker id="arrowK" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
+        <defs><marker id="${arrow}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
         <line class="axis" x1="25" y1="160" x2="278" y2="160"/><line class="axis" x1="35" y1="174" x2="35" y2="22"/>
         <path class="trajectory" d="M40 150 Q145 30 260 150" fill="none"/>
         <circle class="projectile-dot" r="6"><animateMotion dur="3.8s" repeatCount="indefinite" path="M40 150 Q145 30 260 150"/></circle>
-        <line class="v-arrow primary pulse-arrow" x1="52" y1="142" x2="112" y2="142" marker-end="url(#arrowK)"/><text x="75" y="132">vₓ</text>
-        <line class="v-arrow secondary pulse-arrow" x1="52" y1="142" x2="52" y2="90" marker-end="url(#arrowK)"/><text x="58" y="104">vᵧ</text>
-        <text x="212" y="178">time shared in x,y</text>
+        <line class="v-arrow primary pulse-arrow" x1="52" y1="142" x2="112" y2="142" marker-end="url(#${arrow})"/><text x="75" y="132">vₓ</text>
+        <line class="v-arrow secondary pulse-arrow" x1="52" y1="142" x2="52" y2="90" marker-end="url(#${arrow})"/><text x="58" y="104">vᵧ</text>
+        <text x="155" y="178">${riverLabel}</text>
       </svg>`, cfg, compact);
     }
     return frame(`<svg viewBox="0 0 300 190" class="physics-svg">
@@ -54,15 +63,17 @@
         <rect class="block block-a" x="68" y="135" width="44" height="35"/><rect class="block block-b" x="188" y="110" width="44" height="55"/>
         <text x="78" y="158">m</text><text x="199" y="143">2m</text>
         <path class="motion-arrow" d="M242 92 L242 150"/><path class="motion-arrow" d="M58 165 L58 108"/>
+        <text class="caption-text" x="150" y="190" text-anchor="middle">system: tension becomes internal</text>
       </svg>`, cfg, compact);
     }
+    const arrow = uid("arrowD");
     return frame(`<svg viewBox="0 0 300 200" class="physics-svg">
-      <defs><marker id="arrowD" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
+      <defs><marker id="${arrow}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
       <polygon class="incline" points="35,170 265,170 265,65"/>
       <g class="incline-block"><rect class="block" x="168" y="105" width="46" height="34" transform="rotate(-24 191 122)"/></g>
-      <line class="v-arrow primary pulse-arrow" x1="190" y1="118" x2="190" y2="58" marker-end="url(#arrowD)"/><text x="197" y="72">N</text>
-      <line class="v-arrow secondary pulse-arrow" x1="190" y1="118" x2="190" y2="178" marker-end="url(#arrowD)"/><text x="198" y="172">mg</text>
-      <line class="v-arrow friction pulse-arrow" x1="184" y1="126" x2="132" y2="149" marker-end="url(#arrowD)"/><text x="132" y="166">f</text>
+      <line class="v-arrow primary pulse-arrow" x1="190" y1="118" x2="190" y2="58" marker-end="url(#${arrow})"/><text x="197" y="72">N</text>
+      <line class="v-arrow secondary pulse-arrow" x1="190" y1="118" x2="190" y2="178" marker-end="url(#${arrow})"/><text x="198" y="172">mg</text>
+      <line class="v-arrow friction pulse-arrow" x1="184" y1="126" x2="132" y2="149" marker-end="url(#${arrow})"/><text x="132" y="166">f</text>
       <text x="42" y="188">choose axes along / normal to plane</text>
     </svg>`, cfg, compact);
   }
@@ -100,20 +111,22 @@
   }
 
   function orbit(cfg, compact) {
+    const arrow = uid("arrowO");
     return frame(`<svg viewBox="0 0 300 200" class="physics-svg orbit-svg">
-      <defs><marker id="arrowO" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
+      <defs><marker id="${arrow}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
       <circle class="orbit-path" cx="150" cy="100" r="72"/><circle class="planet" cx="150" cy="100" r="25"/>
-      <g class="satellite-orbit"><circle class="satellite" cx="222" cy="100" r="7"/><line class="v-arrow primary" x1="222" y1="100" x2="222" y2="62" marker-end="url(#arrowO)"/></g>
-      <line class="v-arrow secondary pulse-arrow" x1="222" y1="100" x2="175" y2="100" marker-end="url(#arrowO)"/>
+      <g class="satellite-orbit"><circle class="satellite" cx="222" cy="100" r="7"/><line class="v-arrow primary" x1="222" y1="100" x2="222" y2="62" marker-end="url(#${arrow})"/></g>
+      <line class="v-arrow secondary pulse-arrow" x1="222" y1="100" x2="175" y2="100" marker-end="url(#${arrow})"/>
       <text x="230" y="68">v</text><text x="184" y="92">aᵣ</text><text x="114" y="105">M</text>
     </svg>`, cfg, compact);
   }
 
   function lever(cfg, compact) {
+    const arrow = uid("arrowL");
     return frame(`<svg viewBox="0 0 300 190" class="physics-svg">
-      <defs><marker id="arrowL" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
+      <defs><marker id="${arrow}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>
       <g class="lever-group"><line class="lever-bar" x1="40" y1="104" x2="260" y2="90"/><polygon class="pivot" points="145,145 155,104 172,145"/>
-        <line class="v-arrow primary pulse-arrow" x1="62" y1="94" x2="62" y2="145" marker-end="url(#arrowL)"/><line class="v-arrow secondary pulse-arrow" x1="242" y1="91" x2="242" y2="140" marker-end="url(#arrowL)"/>
+        <line class="v-arrow primary pulse-arrow" x1="62" y1="94" x2="62" y2="145" marker-end="url(#${arrow})"/><line class="v-arrow secondary pulse-arrow" x1="242" y1="91" x2="242" y2="140" marker-end="url(#${arrow})"/>
       </g>
       <text x="45" y="165">τ₁ = r₁F₁</text><text x="194" y="165">τ₂ = r₂F₂</text><text x="113" y="32">choose the pivot strategically</text>
     </svg>`, cfg, compact);
