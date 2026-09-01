@@ -4,19 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Physics Olympiad Preparation Hub for Instituto Jorge Robledo: expanded conceptual theory, animated physics diagrams, olympiad strategy, worked examples and 80 topic challenges with saved progress.">
+  <meta name="description" content="Physics Olympiad Preparation Hub for Instituto Jorge Robledo: expanded conceptual theory, physically accurate enlarged diagrams, olympiad strategy, worked examples and 80 topic challenges with saved progress.">
   <title>Physics Olympiad Preparation Hub · IJR</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://rlfxnjbqxbozjdzkbwlz.supabase.co" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
   <link rel="stylesheet" href="styles.css?v=20260901-v1">
   <link rel="stylesheet" href="olympiad-v2.css?v=20260901-v2">
+  <link rel="stylesheet" href="olympiad-v3.css?v=20260901-v3">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script defer src="config.js?v=20260901-v1"></script>
   <script defer src="data.js?v=20260901-v1"></script>
   <script defer src="enhancements.js?v=20260901-v2"></script>
-  <script defer src="visuals.js?v=20260901-v2"></script>
+  <script defer src="visuals.js?v=20260901-v3"></script>
   <script defer src="app.js?v=20260901-v2"></script>
 </head>
 <body>
@@ -36,9 +37,9 @@
 
   <section id="registrationPanel" class="registration-screen">
     <div class="registration-card">
-      <p class="eyebrow">EIA 2026 · OLYMPIAD TRAINING PATH · V2</p>
+      <p class="eyebrow">EIA 2026 · OLYMPIAD TRAINING PATH · V3 VISUAL QA</p>
       <h1>Think first. Model second. Calculate last.</h1>
-      <p class="registration-lead">Ruta de preparación para estudiantes de 9°, 10° y 11°. Cada temática integra <strong>teoría conceptual ampliada, laboratorio visual animado, técnica olímpica, errores frecuentes, ejemplo resuelto y 10 retos interactivos</strong>. El progreso validado se conserva en Supabase.</p>
+      <p class="registration-lead">Ruta de preparación para estudiantes de 9°, 10° y 11°. Cada temática integra <strong>teoría conceptual ampliada, diagramas físicos grandes y específicos para el problema, técnica olímpica, errores frecuentes, ejemplo resuelto y 10 retos interactivos</strong>. El progreso validado se conserva en Supabase.</p>
 
       <div class="competition-strip">
         <div><span>Qualifier</span><strong>P = 20 + 4C − W</strong><small>Blank: 0 points · velocidad + decisión</small></div>
@@ -77,7 +78,7 @@
 
       <div class="guest-row">
         <button id="guestButton" class="button button-light" type="button">Ver teoría como invitado</button>
-        <small>Modo invitado: puedes estudiar teoría, animaciones y ejemplos, pero el workshop no guarda ni valida respuestas.</small>
+        <small>Modo invitado: puedes estudiar teoría, diagramas y ejemplos, pero el workshop no guarda ni valida respuestas.</small>
       </div>
     </div>
   </section>
@@ -89,7 +90,7 @@
         <h1>From formulas to physical reasoning.</h1>
         <p id="identitySummary">Guest learning path</p>
         <p>El objetivo no es memorizar más ecuaciones. Es aprender a reconocer <strong>qué principio físico gobierna una situación</strong>, leer diagramas, construir un modelo simbólico y verificar la respuesta antes de calcular de más.</p>
-        <div class="source-note">Alcance curricular construido a partir del reglamento EIA 2026: cinemática, dinámica, energía, momentum, circular/gravitación, rotación/equilibrio y fluidos. La ampliación V2 añade entrenamiento visual, escalamiento, condiciones límite y problemas multietapa. Los ejercicios son didácticos originales o adaptados al estilo de olimpiadas, no preguntas oficiales filtradas.</div>
+        <div class="source-note">Alcance curricular construido a partir del reglamento EIA 2026: cinemática, dinámica, energía, momentum, circular/gravitación, rotación/equilibrio y fluidos. La ampliación V3 revisa la correspondencia problema↔figura, aumenta el tamaño de los diagramas y representa explícitamente fuerzas, componentes, restricciones, profundidades, radios, brazos de palanca y estados relevantes. Los ejercicios son didácticos originales o adaptados al estilo de olimpiadas, no preguntas oficiales filtradas.</div>
       </div>
       <div class="global-progress-card">
         <span>Progreso del workshop</span>
@@ -103,7 +104,7 @@
       <div class="section-heading">
         <p class="eyebrow">OLYMPIAD TOOLKIT</p>
         <h2 id="strategyTitle">Cómo pensar antes de calcular</h2>
-        <p>Estas seis rutinas deben convertirse en hábito. Son útiles tanto para selección múltiple como para problemas de desarrollo y ahora se conectan con diagramas animados dentro de cada bloque.</p>
+        <p>Estas seis rutinas deben convertirse en hábito. Son útiles tanto para selección múltiple como para problemas de desarrollo y se conectan con diagramas físicos específicos dentro de cada bloque.</p>
       </div>
       <div id="strategyGrid" class="strategy-grid"></div>
     </section>
