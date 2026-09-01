@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Physics Olympiad Workshop: 80 interactive mechanics challenges with physically reviewed large problem-specific diagrams and Supabase progress.">
+  <title>Physics Olympiad · Workshop · IJR</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://rlfxnjbqxbozjdzkbwlz.supabase.co" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="styles.css?v=20260901-v1">
+  <link rel="stylesheet" href="olympiad-v5.css?v=20260901-v5">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script defer src="config.js?v=20260901-v1"></script>
+  <script defer src="data.js?v=20260901-v1"></script>
+  <script defer src="enhancements.js?v=20260901-v2"></script>
+  <script defer src="workshop-visuals-v5.js?v=20260901-v5"></script>
+  <script defer src="workshop-v5.js?v=20260901-v5"></script>
+</head>
+<body class="v5-page">
+  <header class="v5-topbar">
+    <a class="v5-brand" href="./"><span class="v5-brand-badge">IJR</span><span><small>Physics Olympiad Preparation</small><strong>Workshop</strong></span></a>
+    <nav class="v5-nav" aria-label="Olympiad sections"><span id="workshopSessionBadge" class="session-badge hidden"></span><button id="workshopSwitch" class="hidden" type="button">Cambiar participante</button><a href="theory.html">Theory</a><a class="active" href="workshop.html">Workshop</a><a href="../">Physics 9 Home</a></nav>
+  </header>
+
+  <section id="workshopRegistration" class="v5-registration">
+    <p class="v5-kicker">WORKSHOP ONLY · 80 CHALLENGES · SAVED PROGRESS</p>
+    <h1>Olympiad problem solving.</h1>
+    <p>La teoría está separada. Aquí el objetivo es resolver. Los diagramas se muestran únicamente cuando aportan información física útil; fueron redibujados para evitar figuras decorativas, fuerzas mal orientadas, escalas engañosas y modelos que no corresponden al enunciado.</p>
+    <form id="workshopRegistrationForm">
+      <div class="v5-form-grid">
+        <label>Nombre completo<input id="workshopName" type="text" minlength="3" maxlength="140" autocomplete="name" required placeholder="Nombre y apellido"></label>
+        <label>Grado<select id="workshopGrade" required><option value="">Selecciona…</option><option value="9">9°</option><option value="10">10°</option><option value="11">11°</option></select></label>
+        <label>Grupo<select id="workshopGroup" required disabled><option value="">Primero selecciona grado</option></select></label>
+      </div>
+      <div class="v5-form-actions"><div><strong>Supabase progress</strong><p style="margin:3px 0 0">Las respuestas correctas y el progreso se conservan por participante.</p></div><button id="workshopRegisterBtn" class="v5-btn" type="submit">Entrar al workshop</button></div>
+      <p id="workshopRegistrationStatus" class="v5-status" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <main id="workshopMain" class="v5-shell hidden">
+    <section class="v5-hero">
+      <div><p class="v5-kicker">WORKSHOP · PROBLEM-SPECIFIC DIAGRAMS</p><h1>Solve the model, not the picture.</h1><p id="workshopIdentity"></p><p>Las figuras son esquemas físicos: respetan direcciones de fuerzas, relaciones geométricas y datos relevantes, pero no revelan resultados. Cuando una figura no aporta al razonamiento, se omite.</p></div>
+      <div class="v5-mode-card"><strong>80 challenges</strong><span>10 problems × 8 blocks</span></div>
+    </section>
+    <section class="v5-progress" aria-label="Global workshop progress"><strong id="workshopGlobalPercent">0%</strong><div class="v5-progress-track"><span id="workshopGlobalBar"></span></div><small id="workshopGlobalCopy">0 / 80 retos validados</small></section>
+    <div class="v5-layout">
+      <aside class="v5-sidebar"><div class="v5-sidebar-title"><span>Workshop navigation</span><strong>80 challenges</strong></div><nav id="workshopTopicNav" class="v5-topic-nav" aria-label="Workshop topics"></nav></aside>
+      <section id="workshopContent" class="v5-stage"></section>
+    </div>
+    <footer class="v5-footer"><span>Instituto Jorge Robledo · Physics Olympiad Workshop · 2026</span><a href="theory.html">← Review Theory</a></footer>
+  </main>
+</body>
+</html>
