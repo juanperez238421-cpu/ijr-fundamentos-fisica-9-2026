@@ -1,0 +1,8 @@
+/* Theory Lab V7 — senior physics QA corrections */
+.tv6-pe-bar,.tv6-ke-bar{animation:none!important;transform:none!important;transform-origin:unset!important}
+.tv6-energy-runner{will-change:transform}
+.qa-energy-value{font-weight:900!important;fill:#334155!important}
+.tv6-svg line,.tv6-svg path,.tv6-svg polyline,.tv6-svg polygon,.tv6-svg circle,.tv6-svg rect{vector-effect:non-scaling-stroke}
+@keyframes tv6LeftCart{0%,15%{transform:translate(135px,245px)}48%,62%{transform:translate(285px,245px);opacity:1}70%,100%{transform:translate(285px,245px);opacity:0}}
+@keyframes tv6RightCart{0%,15%{transform:translate(580px,245px)}48%,62%{transform:translate(430px,245px);opacity:1}70%,100%{transform:translate(430px,245px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.tv6-energy-runner{will-change:auto}}
