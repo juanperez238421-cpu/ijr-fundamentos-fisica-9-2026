@@ -1,0 +1,4 @@
+/* Workshop V6 — senior visual QA guardrails */
+.workshop-svg line,.workshop-svg path,.workshop-svg polyline,.workshop-svg polygon,.workshop-svg circle,.workshop-svg rect{vector-effect:non-scaling-stroke}
+.workshop-figure[data-qa-status="pass"] .workshop-figure-stage{isolation:isolate}
+.workshop-svg{shape-rendering:geometricPrecision;text-rendering:geometricPrecision}
