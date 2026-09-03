@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="olympiad-v5.css?v=20260901-v5">
   <link rel="stylesheet" href="olympiad-v5-fixes.css?v=20260901-v5a">
   <link rel="stylesheet" href="workshop-v6-qa.css?v=20260902-v6qa">
+  <link rel="stylesheet" href="workshop-dynamics-v7.css?v=20260903-dyn7">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script defer src="config.js?v=20260901-v1"></script>
@@ -20,6 +21,7 @@
   <script defer src="enhancements.js?v=20260901-v2"></script>
   <script defer src="workshop-visuals-v5.js?v=20260901-v5"></script>
   <script defer src="workshop-visuals-v5-fixes.js?v=20260901-v5a"></script>
+  <script defer src="workshop-dynamics-v7.js?v=20260903-dyn7"></script>
   <script defer src="workshop-v6-qa.js?v=20260902-v6qa"></script>
   <script defer src="workshop-v5.js?v=20260901-v5"></script>
 </head>
@@ -30,9 +32,9 @@
   </header>
 
   <section id="workshopRegistration" class="v5-registration">
-    <p class="v5-kicker">WORKSHOP QA V6 · 80 CHALLENGES · SAVED PROGRESS</p>
+    <p class="v5-kicker">WORKSHOP QA V7 · 80 CHALLENGES · SAVED PROGRESS</p>
     <h1>Olympiad problem solving.</h1>
-    <p>La teoría está separada. Aquí el objetivo es resolver. Los diagramas se muestran únicamente cuando aportan información física útil; fueron redibujados y ahora pasan una validación de geometría SVG en tiempo de ejecución para evitar figuras corruptas, fuerzas mal representadas y escalas visuales engañosas.</p>
+    <p>La teoría está separada. Aquí el objetivo es resolver. Los diagramas se muestran únicamente cuando aportan información física útil; el bloque de Dinámica fue reconstruido con geometría de fuerzas, puntos de contacto, ángulos y diagramas de cuerpo libre revisados problema por problema.</p>
     <form id="workshopRegistrationForm">
       <div class="v5-form-grid">
         <label>Nombre completo<input id="workshopName" type="text" minlength="3" maxlength="140" autocomplete="name" required placeholder="Nombre y apellido"></label>
@@ -46,7 +48,7 @@
 
   <main id="workshopMain" class="v5-shell hidden">
     <section class="v5-hero">
-      <div><p class="v5-kicker">WORKSHOP QA V6 · PROBLEM-SPECIFIC DIAGRAMS</p><h1>Solve the model, not the picture.</h1><p id="workshopIdentity"></p><p>Las figuras son esquemas físicos: respetan direcciones de fuerzas, relaciones geométricas y datos relevantes, pero no revelan resultados. Cuando una figura no aporta al razonamiento, se omite; si una figura falla validación estructural, también se rechaza antes de mostrarse.</p></div>
+      <div><p class="v5-kicker">WORKSHOP QA V7 · PROBLEM-SPECIFIC DIAGRAMS</p><h1>Solve the model, not the picture.</h1><p id="workshopIdentity"></p><p>Las figuras son esquemas físicos: respetan direcciones de fuerzas, relaciones geométricas y datos relevantes, pero no revelan resultados por escala de flechas. En Dinámica, movimiento y fuerzas se separan explícitamente; la normal es perpendicular a la superficie, la fricción es tangencial al contacto y los ángulos se dibujan en el vértice geométrico correcto.</p></div>
       <div class="v5-mode-card"><strong>80 challenges</strong><span>10 problems × 8 blocks</span></div>
     </section>
     <section class="v5-progress" aria-label="Global workshop progress"><strong id="workshopGlobalPercent">0%</strong><div class="v5-progress-track"><span id="workshopGlobalBar"></span></div><small id="workshopGlobalCopy">0 / 80 retos validados</small></section>
