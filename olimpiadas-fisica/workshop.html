@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Physics Olympiad Workshop: 80 interactive mechanics challenges with physically reviewed large problem-specific diagrams and Supabase progress.">
+  <meta name="description" content="Physics Olympiad Workshop: 100 interactive mechanics challenges, including a 20-question timed EIA final sprint, with Supabase progress.">
   <title>Physics Olympiad · Workshop · IJR</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://rlfxnjbqxbozjdzkbwlz.supabase.co" crossorigin>
@@ -14,16 +14,19 @@
   <link rel="stylesheet" href="olympiad-v5-fixes.css?v=20260901-v5a">
   <link rel="stylesheet" href="workshop-v6-qa.css?v=20260902-v6qa">
   <link rel="stylesheet" href="workshop-dynamics-v7.css?v=20260903-dyn7">
+  <link rel="stylesheet" href="final-sprint-v8.css?v=20260915-v8">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script defer src="config.js?v=20260901-v1"></script>
   <script defer src="data.js?v=20260901-v1"></script>
   <script defer src="enhancements.js?v=20260901-v2"></script>
+  <script defer src="final-sprint-v8.js?v=20260915-v8"></script>
   <script defer src="workshop-visuals-v5.js?v=20260901-v5"></script>
   <script defer src="workshop-visuals-v5-fixes.js?v=20260901-v5a"></script>
   <script defer src="workshop-dynamics-v7.js?v=20260903-dyn7"></script>
   <script defer src="workshop-v6-qa.js?v=20260902-v6qa"></script>
   <script defer src="workshop-v5.js?v=20260901-v5"></script>
+  <script defer src="final-timer-v8.js?v=20260915-v8"></script>
 </head>
 <body class="v5-page">
   <header class="v5-topbar">
@@ -32,9 +35,9 @@
   </header>
 
   <section id="workshopRegistration" class="v5-registration">
-    <p class="v5-kicker">WORKSHOP QA V7 · 80 CHALLENGES · SAVED PROGRESS</p>
+    <p class="v5-kicker">WORKSHOP V8 · 100 CHALLENGES · EIA FINAL SPRINT</p>
     <h1>Olympiad problem solving.</h1>
-    <p>La teoría está separada. Aquí el objetivo es resolver. Los diagramas se muestran únicamente cuando aportan información física útil; el bloque de Dinámica fue reconstruido con geometría de fuerzas, puntos de contacto, ángulos y diagramas de cuerpo libre revisados problema por problema.</p>
+    <p>La teoría está separada. Aquí el objetivo es resolver. El banco conserva los 80 retos por temas y agrega una categoría final de 20 problemas cronometrados de nivel 11°, con presión de tiempo y problemas que combinan varios principios físicos.</p>
     <form id="workshopRegistrationForm">
       <div class="v5-form-grid">
         <label>Nombre completo<input id="workshopName" type="text" minlength="3" maxlength="140" autocomplete="name" required placeholder="Nombre y apellido"></label>
@@ -48,12 +51,12 @@
 
   <main id="workshopMain" class="v5-shell hidden">
     <section class="v5-hero">
-      <div><p class="v5-kicker">WORKSHOP QA V7 · PROBLEM-SPECIFIC DIAGRAMS</p><h1>Solve the model, not the picture.</h1><p id="workshopIdentity"></p><p>Las figuras son esquemas físicos: respetan direcciones de fuerzas, relaciones geométricas y datos relevantes, pero no revelan resultados por escala de flechas. En Dinámica, movimiento y fuerzas se separan explícitamente; la normal es perpendicular a la superficie, la fricción es tangencial al contacto y los ángulos se dibujan en el vértice geométrico correcto.</p></div>
-      <div class="v5-mode-card"><strong>80 challenges</strong><span>10 problems × 8 blocks</span></div>
+      <div><p class="v5-kicker">WORKSHOP V8 · TIMED FINAL PREPARATION</p><h1>Solve the model, not the picture.</h1><p id="workshopIdentity"></p><p>Los primeros 8 bloques construyen amplitud conceptual. El bloque 09 —EIA Final Sprint— concentra 20 retos integrados con cronómetro individual y simulación global de 63 minutos. El material es de preparación original y no se presenta como banco oficial de la Universidad EIA.</p></div>
+      <div class="v5-mode-card"><strong>100 challenges</strong><span>80 core + 20 timed final sprint</span></div>
     </section>
-    <section class="v5-progress" aria-label="Global workshop progress"><strong id="workshopGlobalPercent">0%</strong><div class="v5-progress-track"><span id="workshopGlobalBar"></span></div><small id="workshopGlobalCopy">0 / 80 retos validados</small></section>
+    <section class="v5-progress" aria-label="Global workshop progress"><strong id="workshopGlobalPercent">0%</strong><div class="v5-progress-track"><span id="workshopGlobalBar"></span></div><small id="workshopGlobalCopy">0 / 100 retos validados</small></section>
     <div class="v5-layout">
-      <aside class="v5-sidebar"><div class="v5-sidebar-title"><span>Workshop navigation</span><strong>80 challenges</strong></div><nav id="workshopTopicNav" class="v5-topic-nav" aria-label="Workshop topics"></nav></aside>
+      <aside class="v5-sidebar"><div class="v5-sidebar-title"><span>Workshop navigation</span><strong>100 challenges</strong></div><nav id="workshopTopicNav" class="v5-topic-nav" aria-label="Workshop topics"></nav></aside>
       <section id="workshopContent" class="v5-stage"></section>
     </div>
     <footer class="v5-footer"><span>Instituto Jorge Robledo · Physics Olympiad Workshop · 2026</span><a href="theory.html">← Review Theory</a></footer>
