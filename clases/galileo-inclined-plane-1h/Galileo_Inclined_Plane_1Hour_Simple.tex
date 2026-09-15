@@ -1,0 +1,214 @@
+\documentclass[10pt,a4paper,landscape]{article}
+\usepackage[margin=1.05cm]{geometry}
+\usepackage{graphicx}
+\graphicspath{{assets/}{../../assets/}}
+\usepackage{array,tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\renewcommand{\arraystretch}{1.28}
+\pagestyle{fancy}
+\fancyhf{}
+\lfoot{Instituto Jorge Robledo - Foundations of Physics 9th}
+\rfoot{Page \thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.3pt}
+\newcommand{\blank}[1]{\rule{#1}{0.4pt}}
+\newcommand{\ijrlogo}[1]{\IfFileExists{assets/logo_colegio_fondo_blanco.png}{\includegraphics[width=#1]{assets/logo_colegio_fondo_blanco.png}}{\IfFileExists{../../assets/logo_colegio_fondo_blanco.png}{\includegraphics[width=#1]{../../assets/logo_colegio_fondo_blanco.png}}{}}}
+
+\begin{document}
+
+% ==================== PAGE 1 ====================
+\begin{minipage}[c]{0.07\textwidth}
+\ijrlogo{1.45cm}
+\end{minipage}
+\begin{minipage}[c]{0.91\textwidth}
+{\Large\bfseries Galileo Inclined Plane - 1 Hour Laboratory}\\[-1mm]
+{\small Grade 9 - 3 students per table - Student data sheet}
+\end{minipage}
+
+\vspace{1.5mm}\hrule\vspace{1.8mm}
+
+\begin{tabularx}{\textwidth}{@{}X X X X@{}}
+\textbf{Student 1:} \blank{4.2cm} & \textbf{Student 2:} \blank{4.2cm} & \textbf{Student 3:} \blank{4.2cm} & \textbf{Section / Date:} \blank{3.5cm} \\
+\end{tabularx}
+
+\vspace{1.5mm}
+\begin{minipage}[t]{0.52\textwidth}
+\textbf{Goal.} Compare the motion on the same ramp at three different inclinations and test whether position is proportional to time squared.
+
+\textbf{Use the same 40 cm test section for all three configurations.}
+Mark these positions from the release line:
+\[
+\boxed{x=0.10\ \text{m},\quad 0.20\ \text{m},\quad 0.30\ \text{m},\quad 0.40\ \text{m}}
+\]
+
+\textbf{Ramp configurations}
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Configuration} & \textbf{Angle $\theta$} & \textbf{Raise upper end $h$} & \textbf{Test length $L$} \\
+\hline
+1 - LOW & $5^\circ$ & $3.5$ cm & $40$ cm \\
+\hline
+2 - MEDIUM & $10^\circ$ & $6.9$ cm & $40$ cm \\
+\hline
+3 - HIGH & $15^\circ$ & $10.4$ cm & $40$ cm \\
+\hline
+\end{tabular}
+\end{center}
+
+{\small The heights come from $h=L\sin\theta$. Keep the lower end fixed and change only the height of the upper end.}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+\textbf{How to set the ramp}
+\begin{center}
+\begin{tikzpicture}[scale=0.9]
+  \draw[thick] (0,0) -- (5.8,0);
+  \draw[very thick] (0,0) -- (5.5,1.6);
+  \draw[dashed] (5.5,0) -- (5.5,1.6);
+  \draw[<->] (5.85,0) -- (5.85,1.6) node[midway,right] {$h$};
+  \draw[<->] (0,-0.35) -- (5.5,-0.35) node[midway,below] {same 40 cm test section};
+  \draw (0.9,0) arc[start angle=0,end angle=16,radius=0.9];
+  \node at (1.1,0.20) {$\theta$};
+  \node[above] at (3.2,1.0) {ramp};
+\end{tikzpicture}
+\end{center}
+
+\textbf{Roles}
+\begin{itemize}[leftmargin=5mm,itemsep=0pt,topsep=1pt]
+  \item Student A: sets the ramp and releases the object without pushing.
+  \item Student B: reads the time values.
+  \item Student C: records the data and checks the height.
+\end{itemize}
+Rotate roles after each configuration.
+
+\textbf{For every row}
+\[
+\bar t=\frac{t_1+t_2}{2}
+\qquad\qquad
+\bar t^{\,2}=(\bar t)^2
+\]
+Write time in seconds and $t^2$ in seconds squared.
+\end{minipage}
+
+\vspace{1.5mm}\hrule\vspace{1.5mm}
+
+\newcommand{\datatable}[3]{%
+\begin{minipage}[t]{0.325\textwidth}
+\centering
+{\bfseries #1}\\[-1mm]
+{\small $\theta=#2^\circ$ \quad $h=#3$ cm \quad $L=40$ cm}\\[1mm]
+\begin{tabular}{|>{\centering\arraybackslash}p{1.15cm}|>{\centering\arraybackslash}p{1.25cm}|>{\centering\arraybackslash}p{1.25cm}|>{\centering\arraybackslash}p{1.35cm}|>{\centering\arraybackslash}p{1.50cm}|}
+\hline
+\textbf{$x$ (m)} & \textbf{$t_1$ (s)} & \textbf{$t_2$ (s)} & \textbf{$\bar t$ (s)} & \textbf{$\bar t^2$ (s$^2$)} \\
+\hline
+0.10 & & & & \\
+\hline
+0.20 & & & & \\
+\hline
+0.30 & & & & \\
+\hline
+0.40 & & & & \\
+\hline
+\end{tabular}
+\end{minipage}}
+
+\datatable{Configuration 1 - LOW}{5}{3.5}\hfill
+\datatable{Configuration 2 - MEDIUM}{10}{6.9}\hfill
+\datatable{Configuration 3 - HIGH}{15}{10.4}
+
+\vfill
+{\small\textbf{Before page 2:} each table must contain 4 values of $\bar t^2$. These 12 points are the points you will graph.}
+
+\newpage
+
+% ==================== PAGE 2 ====================
+\begin{minipage}[c]{0.07\textwidth}
+\ijrlogo{1.30cm}
+\end{minipage}
+\begin{minipage}[c]{0.91\textwidth}
+{\Large\bfseries Construct the Graph}\\[-1mm]
+{\small One graph for all three ramp configurations}
+\end{minipage}
+
+\vspace{1.5mm}\hrule\vspace{1.5mm}
+
+\begin{minipage}[t]{0.33\textwidth}
+\textbf{Step 1 - Axes}
+\begin{itemize}[leftmargin=5mm,itemsep=0pt,topsep=1pt]
+  \item Horizontal axis: $\bar t^2$ in s$^2$.
+  \item Vertical axis: $x$ in m.
+  \item The vertical scale is already fixed: 0.10, 0.20, 0.30, 0.40 m.
+\end{itemize}
+\end{minipage}
+\begin{minipage}[t]{0.33\textwidth}
+\textbf{Step 2 - Horizontal scale}
+\begin{itemize}[leftmargin=5mm,itemsep=0pt,topsep=1pt]
+  \item Find the largest value of $\bar t^2$ in your three tables.
+  \item Largest $\bar t^2 =$ \blank{2.0cm} s$^2$.
+  \item Choose a uniform scale from 0 to a value slightly larger than this maximum.
+  \item Write the numerical scale below the major grid lines.
+\end{itemize}
+\end{minipage}
+\begin{minipage}[t]{0.33\textwidth}
+\textbf{Step 3 - Plot and compare}
+\begin{itemize}[leftmargin=5mm,itemsep=0pt,topsep=1pt]
+  \item LOW: circles $\circ$.
+  \item MEDIUM: triangles $\triangle$.
+  \item HIGH: squares $\square$.
+  \item Plot 4 points for each configuration (12 points total).
+  \item Draw one straight best-fit line for each configuration. Do not connect the points one-by-one.
+\end{itemize}
+\end{minipage}
+
+\vspace{1mm}
+\begin{center}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \draw[step=0.5cm,gray!28,very thin] (0,0) grid (22.0,8.2);
+  \draw[->,thick] (0,0) -- (22.6,0) node[below right] {$\bar t^2$ (s$^2$)};
+  \draw[->,thick] (0,0) -- (0,8.7) node[above left,rotate=90] {$x$ (m)};
+  \foreach \xx in {0,2,4,6,8,10,12,14,16,18,20,22} {\draw (\xx,0.10)--(\xx,-0.10);}
+  \foreach \yy/\lab in {0/0,2/0.10,4/0.20,6/0.30,8/0.40} {
+    \draw (0.10,\yy)--(-0.10,\yy);
+    \node[left] at (-0.15,\yy) {\small \lab};
+  }
+  \node[below] at (0,-0.15) {\small 0};
+  \node[above right] at (14.7,7.55) {\small Legend: $\circ$ LOW \quad $\triangle$ MEDIUM \quad $\square$ HIGH};
+\end{tikzpicture}
+\end{center}
+
+\vspace{-1mm}
+\textbf{Read your graph and answer.}
+
+\begin{minipage}[t]{0.49\textwidth}
+\textbf{1.} Are the three $x$ versus $t^2$ trends approximately straight? \blank{3.0cm}
+
+\textbf{2.} What does a straight trend tell you about $x$ and $t^2$?\\[1mm]
+\blank{11.5cm}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.49\textwidth}
+\textbf{3.} Which configuration gives the steepest line? \blank{3.1cm}
+
+\textbf{4.} What changed when the ramp angle increased?\\[1mm]
+\blank{11.5cm}
+\end{minipage}
+
+\vspace{2mm}
+\textbf{Complete the experimental relationship:}\qquad
+$x\propto$ \blank{1.8cm}
+\qquad\qquad
+\textbf{For motion starting from rest:}\qquad
+$\displaystyle x=\frac{1}{2}at^2$
+
+\vspace{1.5mm}\hrule\vspace{1mm}
+{\small\textbf{Final idea:} if the graph of $x$ versus $t^2$ is approximately a straight line, the experiment supports Galileo's result $x\propto t^2$. A steeper ramp produces a steeper line and therefore a larger acceleration.}
+
+\end{document}
