@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Physics Olympiad Workshop: 100 interactive mechanics challenges, including a 20-question timed EIA final sprint, with Supabase progress.">
-  <title>Physics Olympiad · Workshop · IJR</title>
+  <meta name="description" content="Workshop de preparación para olimpiadas de física del Instituto Jorge Robledo: 100 retos, incluido un Sprint Final EIA de 20 problemas animados y cronometrados en 60 minutos.">
+  <title>Olimpiadas de Física · Workshop · IJR</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://rlfxnjbqxbozjdzkbwlz.supabase.co" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -14,52 +14,53 @@
   <link rel="stylesheet" href="olympiad-v5-fixes.css?v=20260901-v5a">
   <link rel="stylesheet" href="workshop-v6-qa.css?v=20260902-v6qa">
   <link rel="stylesheet" href="workshop-dynamics-v7.css?v=20260903-dyn7">
-  <link rel="stylesheet" href="final-sprint-v8.css?v=20260915-v8">
+  <link rel="stylesheet" href="final-sprint-v9.css?v=20260915-v9">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script defer src="config.js?v=20260901-v1"></script>
   <script defer src="data.js?v=20260901-v1"></script>
   <script defer src="enhancements.js?v=20260901-v2"></script>
-  <script defer src="final-sprint-v8.js?v=20260915-v8"></script>
+  <script defer src="final-sprint-v9.js?v=20260915-v9"></script>
   <script defer src="workshop-visuals-v5.js?v=20260901-v5"></script>
   <script defer src="workshop-visuals-v5-fixes.js?v=20260901-v5a"></script>
   <script defer src="workshop-dynamics-v7.js?v=20260903-dyn7"></script>
+  <script defer src="final-sprint-visuals-v9.js?v=20260915-v9"></script>
   <script defer src="workshop-v6-qa.js?v=20260902-v6qa"></script>
   <script defer src="workshop-v5.js?v=20260901-v5"></script>
-  <script defer src="final-timer-v8b.js?v=20260915-v8b"></script>
+  <script defer src="final-timer-v9.js?v=20260915-v9"></script>
 </head>
 <body class="v5-page">
   <header class="v5-topbar">
-    <a class="v5-brand" href="./"><span class="v5-brand-badge">IJR</span><span><small>Physics Olympiad Preparation</small><strong>Workshop</strong></span></a>
-    <nav class="v5-nav" aria-label="Olympiad sections"><span id="workshopSessionBadge" class="session-badge hidden"></span><button id="workshopSwitch" class="hidden" type="button">Cambiar participante</button><a href="theory.html">Theory</a><a class="active" href="workshop.html">Workshop</a><a href="../">Physics 9 Home</a></nav>
+    <a class="v5-brand" href="./"><span class="v5-brand-badge">IJR</span><span><small>Preparación Olimpiadas de Física</small><strong>Workshop</strong></span></a>
+    <nav class="v5-nav" aria-label="Secciones de olimpiada"><span id="workshopSessionBadge" class="session-badge hidden"></span><button id="workshopSwitch" class="hidden" type="button">Cambiar participante</button><a href="theory.html">Teoría</a><a class="active" href="workshop.html">Workshop</a><a href="../">Física 9°</a></nav>
   </header>
 
   <section id="workshopRegistration" class="v5-registration">
-    <p class="v5-kicker">WORKSHOP V8 · 100 CHALLENGES · EIA FINAL SPRINT</p>
-    <h1>Olympiad problem solving.</h1>
-    <p>La teoría está separada. Aquí el objetivo es resolver. El banco conserva los 80 retos por temas y agrega una categoría final de 20 problemas cronometrados de nivel 11°, con presión de tiempo y problemas que combinan varios principios físicos.</p>
+    <p class="v5-kicker">WORKSHOP V9 · 100 RETOS · SPRINT FINAL EIA</p>
+    <h1>Resolución de problemas de olimpiada.</h1>
+    <p>El banco conserva los 80 retos temáticos y agrega un Sprint Final de 20 problemas integrados para grado 11. Cada problema tiene tiempo objetivo y un diagrama físico SVG animado, diseñado para apoyar el modelado sin revelar la respuesta.</p>
     <form id="workshopRegistrationForm">
       <div class="v5-form-grid">
         <label>Nombre completo<input id="workshopName" type="text" minlength="3" maxlength="140" autocomplete="name" required placeholder="Nombre y apellido"></label>
         <label>Grado<select id="workshopGrade" required><option value="">Selecciona…</option><option value="9">9°</option><option value="10">10°</option><option value="11">11°</option></select></label>
         <label>Grupo<select id="workshopGroup" required disabled><option value="">Primero selecciona grado</option></select></label>
       </div>
-      <div class="v5-form-actions"><div><strong>Supabase progress</strong><p style="margin:3px 0 0">Las respuestas correctas y el progreso se conservan por participante.</p></div><button id="workshopRegisterBtn" class="v5-btn" type="submit">Entrar al workshop</button></div>
+      <div class="v5-form-actions"><div><strong>Progreso guardado</strong><p style="margin:3px 0 0">Las respuestas correctas y el avance se conservan por participante.</p></div><button id="workshopRegisterBtn" class="v5-btn" type="submit">Entrar al workshop</button></div>
       <p id="workshopRegistrationStatus" class="v5-status" role="status" aria-live="polite"></p>
     </form>
   </section>
 
   <main id="workshopMain" class="v5-shell hidden">
     <section class="v5-hero">
-      <div><p class="v5-kicker">WORKSHOP V8 · TIMED FINAL PREPARATION</p><h1>Solve the model, not the picture.</h1><p id="workshopIdentity"></p><p>Los primeros 8 bloques construyen amplitud conceptual. El bloque 09 —EIA Final Sprint— concentra 20 retos integrados con cronómetro individual y simulación global de 63 minutos. El material es de preparación original y no se presenta como banco oficial de la Universidad EIA.</p></div>
-      <div class="v5-mode-card"><strong>100 challenges</strong><span>80 core + 20 timed final sprint</span></div>
+      <div><p class="v5-kicker">WORKSHOP V9 · SIMULACRO FINAL ANIMADO</p><h1>Modela primero. Calcula después.</h1><p id="workshopIdentity"></p><p>Los primeros 8 bloques construyen amplitud conceptual. El bloque 09 —Sprint Final EIA— concentra 20 problemas integrados con cronómetro individual, simulacro total de exactamente 60 minutos y figuras animadas específicas para cada situación física. Es material original de preparación, no un banco oficial de la Universidad EIA.</p></div>
+      <div class="v5-mode-card"><strong>100 retos</strong><span>80 base + 20 Sprint Final</span></div>
     </section>
-    <section class="v5-progress" aria-label="Global workshop progress"><strong id="workshopGlobalPercent">0%</strong><div class="v5-progress-track"><span id="workshopGlobalBar"></span></div><small id="workshopGlobalCopy">0 / 100 retos validados</small></section>
+    <section class="v5-progress" aria-label="Progreso global del workshop"><strong id="workshopGlobalPercent">0%</strong><div class="v5-progress-track"><span id="workshopGlobalBar"></span></div><small id="workshopGlobalCopy">0 / 100 retos validados</small></section>
     <div class="v5-layout">
-      <aside class="v5-sidebar"><div class="v5-sidebar-title"><span>Workshop navigation</span><strong>100 challenges</strong></div><nav id="workshopTopicNav" class="v5-topic-nav" aria-label="Workshop topics"></nav></aside>
+      <aside class="v5-sidebar"><div class="v5-sidebar-title"><span>Navegación</span><strong>100 retos</strong></div><nav id="workshopTopicNav" class="v5-topic-nav" aria-label="Temas del workshop"></nav></aside>
       <section id="workshopContent" class="v5-stage"></section>
     </div>
-    <footer class="v5-footer"><span>Instituto Jorge Robledo · Physics Olympiad Workshop · 2026</span><a href="theory.html">← Review Theory</a></footer>
+    <footer class="v5-footer"><span>Instituto Jorge Robledo · Olimpiadas de Física · 2026</span><a href="theory.html">← Revisar teoría</a></footer>
   </main>
 </body>
 </html>
