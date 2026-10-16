@@ -4,8 +4,8 @@ Instituto Jorge Robledo · Juan Diego Pérez · Periodo 2026.
 
 ## Estado de publicación
 
-- La evaluación conserva una lista de **un único correo institucional autorizado**, sin PIN ni código adicional. El registro de correo es declarado, no verifica titularidad.
-- La tabla `public.physics9_motion_single_access_v1` limita el acceso a un correo institucional configurado. Inicialmente se habilitará únicamente una dirección de prueba ficticia para validación; luego debe reemplazarse por el correo real.
+- La evaluación conserva una lista de **correos institucionales explícitamente autorizados (estudiante y QA)**, sin PIN ni código adicional. El registro de correo es declarado, no verifica titularidad.
+- La tabla `public.physics9_motion_single_access_v1` limita el acceso a un correo principal y a un correo adicional de QA, cada uno validado de forma exacta. Inicialmente se habilitará únicamente una dirección de prueba ficticia para validación; luego debe reemplazarse por el correo real.
 - Correo ficticio de prueba, sin verificar que exista el buzón: `qa.fisica9.2026@ijr.edu.co`. Esta identidad no pertenece a un alumno real y debe reemplazarse antes de evaluar a un estudiante.
 - El acceso de un estudiante se controla realmente por Supabase Edge Function, no por deshabilitar solo un botón de HTML.
 - Sin código, cualquier persona que conozca el correo permitido podría declararlo. **No es un inicio de sesión de Microsoft ni autenticación institucional**; el docente debe contrastar identidad antes de asignar nota.
@@ -26,7 +26,7 @@ Instituto Jorge Robledo · Juan Diego Pérez · Periodo 2026.
 Supabase proyecto existente del IJR: `rlfxnjbqxbozjdzkbwlz`.
 
 - Tabla privada `public.physics9_motion_single_access_v1`: estado de habilitación y correo autorizado, sin credenciales PIN.
-- Tabla privada `public.physics9_motion_single_attempts_v1`: un intento máximo por email y actividad; permite reabrir el mismo intento declarando el mismo correo, nombre y grupo, rotando el token de sesión. Cuando cambia el correo permitido, los tokens de la dirección anterior dejan de ser válidos.
+- Tabla privada `public.physics9_motion_single_attempts_v1`: un intento máximo por email y actividad; permite reabrir el mismo intento declarando el mismo correo, nombre y grupo, rotando el token de sesión. Los tokens de una dirección siguen válidos mientras esa dirección permanezca en alguna de las dos entradas autorizadas.
 - Bitácora privada `private.physics9_motion_single_audit_v1`: snapshots e integridad SHA256, append-only.
 - Edge Function `physics9-position-individual`: `config`, `start`, `status`, `answer`, `incident`, `submit`.
 - El frontend solo recibe un token de sesión aleatorio y guarda una copia temporal en `sessionStorage`; nunca usa `service_role` ni consulta tablas de estudiantes directamente.
@@ -66,3 +66,15 @@ node --test evaluaciones/posicion-velocidad-individual/qa.test.cjs
 El workflow `.github/workflows/qa-physics9-individual-motion.yml` verifica estructura, 4 diagramas, registro individual, ausencia de soluciones en manifest y soporte de velocidades negativas.
 
 > **Nota de seguridad:** El correo por sí solo no autentica a nadie; evita atribuir una entrega a un estudiante sin comprobarla por otro medio.
+
+## Acceso QA paralelo sin afectar al estudiante
+
+La configuración usa dos columnas independientes: `allowed_email` (estudiante real) y `additional_allowed_email` (QA). Agregar QA no cambia el correo de Tomás, su `token_hash`, sus respuestas, sus incidencias ni el estado de su intento. La función considera ambas columnas tanto al iniciar un intento como al validar los tokens de sesiones ya activas. El QA reutiliza exclusivamente su propio intento existente por correo institucional.
+
+Para retirar el acceso de QA sin tocar al estudiante, ejecutar en SQL Editor:
+
+```sql
+UPDATE public.physics9_motion_single_access_v1
+SET additional_allowed_email = NULL, updated_at=now()
+WHERE exam_key='physics9-position-velocity-2026';
+```
