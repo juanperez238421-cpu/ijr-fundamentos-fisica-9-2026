@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="160 55 800 555" role="img" aria-label="Gráfica de posición en función del tiempo, Recorrido y velocidad media total"><rect x="160" y="55" width="800" height="555" rx="10" fill="#ffffff"/><rect x="181" y="74" width="758" height="516" rx="8" fill="#f8fbff" stroke="#dce7f8"/><text x="205" y="102" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#244b93" letter-spacing="1.6">POSICIÓN — TIEMPO · FÍSICA 9°</text>
+<line x1="295" y1="501" x2="895" y2="501" stroke="#e1eaf5" stroke-width="1"/>
+<text x="280" y="506" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="end">−8</text>
+<line x1="295" y1="438.1666666666667" x2="895" y2="438.1666666666667" stroke="#e1eaf5" stroke-width="1"/>
+<text x="280" y="443.1666666666667" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="end">−6</text>
+<line x1="295" y1="375.33333333333337" x2="895" y2="375.33333333333337" stroke="#e1eaf5" stroke-width="1"/>
+<text x="280" y="380.33333333333337" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="end">−4</text>
+<line x1="295" y1="312.5" x2="895" y2="312.5" stroke="#e1eaf5" stroke-width="1"/>
+<text x="280" y="317.5" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="end">−2</text>
+<line x1="295" y1="249.66666666666669" x2="895" y2="249.66666666666669" stroke="#9eafc7" stroke-width="2"/>
+<text x="280" y="254.66666666666669" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="end">0</text>
+<line x1="295" y1="186.83333333333331" x2="895" y2="186.83333333333331" stroke="#e1eaf5" stroke-width="1"/>
+<text x="280" y="191.83333333333331" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="end">2</text>
+<line x1="295" y1="124" x2="895" y2="124" stroke="#e1eaf5" stroke-width="1"/>
+<text x="280" y="129" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="end">4</text>
+<line x1="295" y1="124" x2="295" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="295" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">0</text>
+<line x1="355" y1="124" x2="355" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="355" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">1</text>
+<line x1="415" y1="124" x2="415" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="415" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">2</text>
+<line x1="475" y1="124" x2="475" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="475" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">3</text>
+<line x1="535" y1="124" x2="535" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="535" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">4</text>
+<line x1="595" y1="124" x2="595" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="595" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">5</text>
+<line x1="655" y1="124" x2="655" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="655" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">6</text>
+<line x1="715" y1="124" x2="715" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="715" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">7</text>
+<line x1="775" y1="124" x2="775" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="775" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">8</text>
+<line x1="835" y1="124" x2="835" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="835" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">9</text>
+<line x1="895" y1="124" x2="895" y2="501" stroke="#e4ebf6" stroke-width="1"/>
+<text x="895" y="523" fill="#587196" font-size="13" font-family="Arial, sans-serif" text-anchor="middle">10</text>
+<line x1="295" y1="118" x2="295" y2="501" stroke="#34527d" stroke-width="2.2"/><line x1="295" y1="501" x2="902" y2="501" stroke="#34527d" stroke-width="2.2"/>
+<path d="M290 126 L295 117 L300 126" fill="none" stroke="#34527d" stroke-width="2"/><path d="M893 496 L903 501 L893 506" fill="none" stroke="#34527d" stroke-width="2"/>
+<text x="595" y="558" fill="#25466c" font-size="16" font-family="Arial, sans-serif" text-anchor="middle" font-weight="700">Tiempo, t (s)</text>
+<text x="206" y="318" fill="#25466c" font-size="16" font-weight="700" font-family="Arial" transform="rotate(-90 206 318)" text-anchor="middle">Posición, x (m)</text>
+<polyline points="295.00,375.33 475.00,186.83 715.00,438.17 895.00,438.17" fill="none" stroke="#285cbb" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="295" cy="375.33333333333337" r="6.5" fill="#ffffff" stroke="#285cbb" stroke-width="3"/>
+<circle cx="475" cy="186.83333333333331" r="6.5" fill="#ffffff" stroke="#285cbb" stroke-width="3"/>
+<circle cx="715" cy="438.1666666666667" r="6.5" fill="#ffffff" stroke="#285cbb" stroke-width="3"/>
+<circle cx="895" cy="438.1666666666667" r="6.5" fill="#ffffff" stroke="#285cbb" stroke-width="3"/>
+<text x="205" y="571" font-family="Arial,sans-serif" font-size="12" fill="#7d91ae">Tramos rectilíneos · escalas proporcionales · posición con signo</text></svg>

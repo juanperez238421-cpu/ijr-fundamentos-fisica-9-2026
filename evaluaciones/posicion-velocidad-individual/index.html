@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7fc">
+  <meta name="description" content="Evaluación individual de Física 9°: posición, gráficas x(t) y velocidad media por intervalos. Instituto Jorge Robledo.">
+  <title>Evaluación individual · Posición y velocidad | Física 9°</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./refinement.css">
+  <link rel="stylesheet" href="./physics.css">
+  <script defer src="./calculator-core.js"></script>
+  <script defer src="./calculator.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+<div class="app-shell">
+ <header class="topbar">
+  <div class="brand">
+   <img class="brand-logo" src="./assets/escudo-institucional-original.svg" alt="Escudo del Instituto Jorge Robledo" width="66" height="72">
+   <div><span class="brand-school">Instituto Jorge Robledo</span><span class="brand-course">FÍSICA <strong>09</strong> <span class="tiny-sep">/</span> EVALUACIÓN INDIVIDUAL</span></div>
+  </div>
+  <div class="topbar-right"><span class="topbar-year">2026 · Bachillerato</span><span class="status-pill" id="topStatus"><span class="status-dot"></span> ACCESO CONTROLADO</span></div>
+ </header>
+ <main>
+  <section id="welcomeView" class="welcome view" aria-labelledby="welcomeTitle">
+   <div class="welcome-copy">
+    <div class="eyebrow"><span class="eyebrow-line"></span> CINEMÁTICA · NOVENO GRADO</div>
+    <h1 id="welcomeTitle">La posición cambia. <span>La pendiente lo explica.</span></h1>
+    <p class="welcome-lead">Evaluación de <strong>posición, ecuación x(t) y velocidad media</strong>. Interpreta cuatro gráficas de movimiento rectilíneo y justifica tus cálculos por intervalos.</p>
+    <div class="stats-grid">
+     <div class="stat"><span class="stat-number">04</span><span class="stat-label">Problemas con diagramas</span></div>
+     <div class="stat"><span class="stat-number">Δx/Δt</span><span class="stat-label">Velocidad media</span></div>
+     <div class="stat"><span class="stat-number">03</span><span class="stat-label">Incidencias máximas</span></div>
+    </div>
+    <div class="instructions">
+     <h2>Antes de comenzar</h2>
+     <p>Trabaja individualmente. Para cada problema, interpreta la gráfica <strong>x frente a t</strong>, registra la velocidad media solicitada en <strong>m/s</strong> y explica la ecuación y los cálculos. Las velocidades negativas son válidas.</p>
+     <p>La actividad utiliza pantalla completa. Salir de pantalla completa o cambiar de pestaña puede generar una incidencia; tres incidencias bloquean el intento para revisión docente. El registro no constituye prueba automática de fraude.</p>
+    </div>
+    <p id="accessNotice" class="access-notice" role="status">Verificando habilitación de la evaluación individual…</p>
+    <form id="registrationForm" class="student-form" aria-label="Registro individual del estudiante" novalidate>
+     <label for="studentName">Nombre y apellido</label><input id="studentName" type="text" maxlength="120" autocomplete="name" placeholder="Nombre completo" required>
+     <label for="studentEmail">Correo institucional</label><input id="studentEmail" type="email" autocomplete="email" maxlength="160" placeholder="estudiante@ijr.edu.co" required>
+     <label for="studentGroup">Grupo</label><select id="studentGroup" required><option value="">Selecciona tu grupo</option><option value="9A">9°A</option><option value="9B">9°B</option><option value="9C">9°C</option><option value="OTRO">Movilidad / otro</option></select>
+     <label for="studentPin">Código individual de acceso</label><input id="studentPin" type="password" autocomplete="off" minlength="6" maxlength="32" placeholder="Código entregado por el docente" required>
+     <label class="consent-line"><input id="studentAgree" type="checkbox"> Comprendo las reglas de entrega y del control de incidencias.</label>
+     <div class="welcome-actions"><button class="btn btn-primary" id="previewStart" type="submit" disabled>Iniciar evaluación <span aria-hidden="true">↗</span></button></div>
+    </form>
+    <p class="preview-disclaimer">La identificación requiere correo autorizado y código privado. Tus respuestas se guardan en un registro protegido de Supabase. El correo y el código no se publican.</p>
+   </div>
+   <div class="welcome-visual" aria-label="Vista previa de una gráfica posición-tiempo">
+    <div class="visual-top"><span>KINEMATICS LAB / 09</span><span>POSITION · TIME</span></div>
+    <div class="welcome-plot">
+     <svg viewBox="0 0 580 370" role="img" aria-label="Gráfica esquemática de un movimiento con avance, reposo y regreso">
+      <rect x="0" y="0" width="580" height="370" rx="10" fill="#f8fbff"/>
+      <g stroke="#e2eafa" stroke-width="1"><path d="M78 45V317 M150 45V317 M222 45V317 M294 45V317 M366 45V317 M438 45V317 M510 45V317"/><path d="M78 76H530 M78 135H530 M78 194H530 M78 253H530 M78 312H530"/></g>
+      <g stroke="#2b496e" stroke-width="2.5"><path d="M78 42V312H531"/></g>
+      <path d="M78 253 L222 100 L366 100 L510 268" fill="none" stroke="#315fc1" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="#fff" stroke="#315fc1" stroke-width="4"><circle cx="78" cy="253" r="8"/><circle cx="222" cy="100" r="8"/><circle cx="366" cy="100" r="8"/><circle cx="510" cy="268" r="8"/></g>
+      <text x="90" y="38" fill="#274c84" font-size="17" font-weight="700" font-family="Arial">x (m)</text><text x="494" y="345" fill="#274c84" font-size="17" font-weight="700" font-family="Arial">t (s)</text>
+      <text x="235" y="88" fill="#315fc1" font-size="13" font-weight="700" font-family="Arial">v = 0</text>
+     </svg>
+    </div>
+    <div class="visual-caption"><span>GRÁFICAS x(t)</span><span class="visual-bar"></span><span>VELOCIDAD MEDIA · Δx/Δt</span></div>
+   </div>
+  </section>
+  <section id="examView" class="exam view hidden" aria-labelledby="examHeading">
+   <div class="exam-topline">
+    <div><p class="eyebrow exam-eyebrow">FÍSICA 9° / EVALUACIÓN INDIVIDUAL</p><h1 id="examHeading">Posición y velocidad por intervalos</h1><p id="studentLabel" class="student-label"></p></div>
+    <div class="exam-metrics">
+     <div class="metric"><span>TIEMPO TRANSCURRIDO</span><strong id="clock">00:00</strong></div>
+     <div class="metric"><span>INCIDENCIAS</span><div class="strike-dots" id="strikeDots" aria-label="0 de 3 incidencias"><i></i><i></i><i></i></div></div>
+     <div class="metric"><span>AVANCE</span><strong id="progress">0 / 4</strong></div>
+    </div>
+   </div>
+   <section class="exam-instructions"><span class="instruction-mark" aria-hidden="true">i</span><div class="instruction-text"><h2>Resuelve usando la gráfica posición-tiempo</h2><p>Usa la ecuación <strong>x(t) = x₀ + vt</strong> en los tramos uniformes y <strong>v̄ = (x₂ − x₁)/(t₂ − t₁)</strong>. Explica cada intervalo, conserva los signos y usa metros (m), segundos (s) y metros por segundo (m/s).</p></div></section>
+   <div class="exam-layout">
+    <nav class="problem-rail" aria-label="Navegación de problemas">
+     <div class="rail-top"><span class="rail-overline">CUESTIONARIO</span><strong>Problemas</strong><small>Selecciona un ejercicio</small></div>
+     <div id="problemNavigation" class="rail-nav"><button type="button" class="rail-item selected" data-problem="0"><span class="rail-num">01</span><span class="rail-copy"><strong>Problema 01</strong><small>Posición y velocidad</small></span><span class="rail-state">○</span></button><button type="button" class="rail-item " data-problem="1"><span class="rail-num">02</span><span class="rail-copy"><strong>Problema 02</strong><small>Posición y velocidad</small></span><span class="rail-state">○</span></button><button type="button" class="rail-item " data-problem="2"><span class="rail-num">03</span><span class="rail-copy"><strong>Problema 03</strong><small>Posición y velocidad</small></span><span class="rail-state">○</span></button><button type="button" class="rail-item " data-problem="3"><span class="rail-num">04</span><span class="rail-copy"><strong>Problema 04</strong><small>Posición y velocidad</small></span><span class="rail-state">○</span></button></div>
+     <div class="rail-bottom"><span class="shield" aria-hidden="true">◇</span><p>Registro privado. Cada respuesta se guarda vinculada al único intento autorizado.</p></div>
+    </nav>
+    <div class="question-column">
+     <article class="question-card">
+      <div class="question-header"><span class="question-index" id="questionCounter">EJERCICIO 01 DE 04</span><span class="question-type">GRÁFICA x(t) · VELOCIDAD MEDIA</span></div>
+      <h2 id="questionTitle">Cargando problema...</h2>
+      <div class="problem-statement"><span class="statement-label">ENUNCIADO</span><p class="question-statement" id="questionStatement"></p></div>
+      <div class="diagram-frame" id="diagramFrame" aria-label="Diagrama posición-tiempo"></div>
+      <p class="dimension-caption" id="dimensionCaption"></p>
+      <div class="diagram-bottom"><span>DIAGRAMA <strong id="diagramNumber">01</strong> / 04</span><span>GRÁFICO VECTORIAL A ESCALA</span></div>
+     </article>
+     <div class="question-pager"><button type="button" class="btn btn-outline" id="prevButton" disabled>← Anterior</button><span id="pageIndicator">01 / 04</span><button type="button" class="btn btn-primary" id="nextButton">Siguiente →</button></div>
+    </div>
+    <aside class="answer-card" aria-labelledby="answerHeading">
+     <div class="answer-heading"><span class="answer-icon" aria-hidden="true">✎</span><div><span>TU RESPUESTA</span><h2 id="answerHeading">Desarrolla la solución</h2></div></div>
+     <label class="field-label" for="areaValue" id="numericPrompt">Velocidad media solicitada</label>
+     <div class="value-field"><input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" id="areaValue" placeholder="Ej. −2,5"><select aria-label="Unidad de velocidad" disabled><option>m/s</option></select></div>
+     <p class="field-hint" id="inputHelp">Se aceptan números positivos, negativos y decimales con coma o punto.</p>
+     <label class="field-label steps-label" for="reasoning">Ecuaciones y procedimiento</label>
+     <textarea id="reasoning" maxlength="8000" rows="10" placeholder="1. Leo las posiciones de la gráfica.&#10;2. Escribo x(t) o la ecuación del tramo.&#10;3. Calculo Δx y Δt.&#10;4. Calculo la velocidad con signo y unidades."></textarea>
+     <div class="save-note" id="saveStatus" role="status">Aún no se han guardado cambios.</div>
+     <p class="answer-advice" id="reasoningHint">Justifica las ecuaciones y cada intervalo indicado en el enunciado.</p>
+     <button type="button" class="btn btn-secondary end-button" id="finishButton">Enviar evaluación</button>
+    </aside>
+    <aside class="calculator-card" id="calculatorPanel" aria-labelledby="calculatorTitle">
+     <div class="calculator-head"><div><span class="calculator-kicker">HERRAMIENTA DE APOYO</span><h2 id="calculatorTitle">Calculadora</h2></div><span class="calc-status">Disponible</span></div>
+     <p class="calc-description" id="calculatorHelp">Usa la calculadora para obtener velocidades. Los resultados negativos son válidos.</p>
+     <div class="calc-screen"><div id="calcExpression" class="calc-expression" tabindex="0" role="textbox" aria-readonly="true" aria-label="Operación actual">0</div><output id="calcResult" class="calc-result" role="status">0</output></div>
+     <div class="calc-keys" role="group" aria-label="Teclado de la calculadora"><button type="button" class="calc-key utility" data-calc="clear" aria-label="Borrar todo">AC</button>
+<button type="button" class="calc-key utility" data-calc="back" aria-label="Borrar último">⌫</button>
+<button type="button" class="calc-key utility" data-calc="(" aria-label="(">(</button>
+<button type="button" class="calc-key utility" data-calc=")" aria-label=")">)</button>
+<button type="button" class="calc-key " data-calc="7" aria-label="7">7</button>
+<button type="button" class="calc-key " data-calc="8" aria-label="8">8</button>
+<button type="button" class="calc-key " data-calc="9" aria-label="9">9</button>
+<button type="button" class="calc-key operator" data-calc="÷" aria-label="÷">÷</button>
+<button type="button" class="calc-key " data-calc="4" aria-label="4">4</button>
+<button type="button" class="calc-key " data-calc="5" aria-label="5">5</button>
+<button type="button" class="calc-key " data-calc="6" aria-label="6">6</button>
+<button type="button" class="calc-key operator" data-calc="×" aria-label="×">×</button>
+<button type="button" class="calc-key " data-calc="1" aria-label="1">1</button>
+<button type="button" class="calc-key " data-calc="2" aria-label="2">2</button>
+<button type="button" class="calc-key " data-calc="3" aria-label="3">3</button>
+<button type="button" class="calc-key operator" data-calc="−" aria-label="−">−</button>
+<button type="button" class="calc-key " data-calc="0" aria-label="0">0</button>
+<button type="button" class="calc-key " data-calc="." aria-label=".">.</button>
+<button type="button" class="calc-key " data-calc="π" aria-label="π">π</button>
+<button type="button" class="calc-key operator" data-calc="+" aria-label="+">+</button>
+<button type="button" class="calc-key utility" data-calc="±" aria-label="±">±</button>
+<button type="button" class="calc-key utility" data-calc="%" aria-label="%">%</button>
+<button type="button" class="calc-key equals" data-calc="equals" aria-label="Calcular">=</button>
+<button type="button" class="calc-key utility" data-calc="square" aria-label="Elevar al cuadrado">x²</button></div>
+     <button type="button" class="calc-transfer" id="calcTransfer" disabled>↳ Usar resultado en mi respuesta</button>
+     <p class="calc-hint" id="calcHint" role="status" aria-live="polite">Puedes usar el teclado para calcular.</p>
+    </aside>
+   </div>
+  </section>
+  <section id="resultView" class="result view hidden" aria-labelledby="resultHeading"><div class="result-card"><div id="resultIcon" class="result-icon">✓</div><p class="eyebrow">REGISTRO PRIVADO · FÍSICA 9°</p><h1 id="resultHeading">Evaluación enviada</h1><p id="resultDescription"></p><div id="resultSummary" class="result-summary"></div><p class="receipt" id="receipt"></p><button type="button" id="restartButton" class="btn btn-primary">Cerrar</button></div></section>
+ </main>
+ <footer class="site-footer"><span>© Instituto Jorge Robledo · Física 9° · 2026</span><span>Evaluación individual de cinemática · 4 problemas</span></footer>
+</div>
+<div id="incidentModal" class="modal-backdrop hidden" role="presentation"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText"><span id="modalEyebrow" class="modal-eyebrow">CONTROL DE INTEGRIDAD</span><div id="modalSymbol" class="modal-symbol">!</div><h2 id="modalTitle">Salida detectada</h2><p id="modalText">Regresa a pantalla completa para continuar.</p><div id="modalStrikeCount" class="modal-strikes">1 de 3 incidencias</div><button type="button" class="btn btn-primary modal-action" id="modalAction">Regresar a pantalla completa</button><p class="modal-foot">Los eventos se registran con hora del servidor; no demuestran fraude por sí solos.</p></div></div>
+</body></html>
