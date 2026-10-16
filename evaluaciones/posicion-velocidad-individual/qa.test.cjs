@@ -70,10 +70,23 @@ test("negative velocity supported by browser, server and calculator",()=>{
  assert.equal(core.evaluate("(-4-8)/(9-5)"),-3);
  assert.equal(core.evaluate("(-6-(-4))/10"),-0.2);
 });
-test("three incident signals and anti-duplication protocol",()=>{
- for(const signal of ["fullscreenchange","visibilitychange","blur","incidentBusy","crypto.randomUUID"])assert(js.includes(signal));
- assert(api.includes('event_id')&&api.includes('duplicate:true'));
- assert(js.includes('MAX=3')&&api.includes('Math.min(3'));
+test("no tab or fullscreen penalties; cutoff is server enforced",()=>{
+ assert(!js.includes('document.addEventListener("visibilitychange"'));
+ assert(!js.includes('document.addEventListener("fullscreenchange"'));
+ assert(!js.includes('window.addEventListener("blur"'));
+ assert(!js.includes('await incident("recarga'));
+ assert(!js.includes('const isFullscreen=await fullscreen()'));
+ assert(!js.includes('id="strikeDots"'));
+ assert(!html.includes('id="strikeDots"'));
+ assert(api.includes('if(p.action==="incident")return response({strikes:row.strikes,state:row.state,ignored:true}'));
+ assert(!api.includes('Math.min(3'));
+ assert(api.includes('2026-10-16T17:00:00.000Z'));
+ assert(api.includes('timezone:\'America/Bogota\''));
+ assert(api.includes('if(p.action==="submit"){'));
+ assert(api.includes('if(!openUntilNoon())return response({error:"ASSESSMENT_CLOSED"},403,origin)'));
+ assert(api.includes('if(p.action==="answer"){'));
+ assert(html.includes('12:00 del mediodía'));
+ assert(js.includes('authorized=cfg.enabled===true&&cfg.open!==false'));
 });
 
 test("primary student access survives enabling a distinct QA email",()=>{
