@@ -156,7 +156,7 @@ function showResult(statusValue,receipt,stamp){
   "\nGrupo: "+(state.session?.student_group||"")+
   "\nCorreo institucional: "+(state.session?.student_email||"")+
   "\nPreguntas completas: "+state.answers.filter(complete).length+" de 4"+
-  "\nIncidencias: "+state.strikes+" de 3"+
+
   (stamp?"\nHora de entrega: "+new Date(stamp).toLocaleString("es-CO"):"");
  $("receipt").textContent="Comprobante: "+(receipt||state.session?.attempt_id||"");
  persist();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
