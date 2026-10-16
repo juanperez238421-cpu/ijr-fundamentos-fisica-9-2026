@@ -52,6 +52,7 @@ Deno.serve(async(req:Request)=>{
    const {data:config,error:configError}=await db.from(SETTINGS).select("enabled,allowed_email,additional_allowed_email").eq("exam_key",KEY).single();
    if(configError||!config||!config.enabled)return response({error:"EXAM_NOT_ENABLED"},403,origin);
    if(config.allowed_email!==student_email&&config.additional_allowed_email!==student_email)return response({error:"ACCESS_DENIED"},403,origin);
+   if(!openUntilNoon())return response({error:"ASSESSMENT_CLOSED",...timeWindow()},403,origin);
    const issued=newToken(),token_hash=await hash(issued);
    const {data:existing,error:existingError}=await db.from(TABLE).select("id,student_name,student_email,student_group,answers,strikes,state,started_at,submitted_at")
      .eq("exam_key",KEY).eq("student_email",student_email).maybeSingle();
