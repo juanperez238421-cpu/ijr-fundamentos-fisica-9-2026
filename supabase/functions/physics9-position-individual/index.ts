@@ -87,17 +87,7 @@ Deno.serve(async(req:Request)=>{
    if(error||!data)return response({error:"SAVE_UNAVAILABLE"},409,origin);
    return response({saved:true,problem_id:p.problem_id},200,origin);
   }
-  if(p.action==="incident"){
-   if(!uuid(p.event_id))return response({error:"INVALID_EVENT_ID"},400,origin);
-   const old=Array.isArray(row.events)?row.events:[];
-   if(old.some((e:any)=>e&&e.event_id===p.event_id))return response({strikes:row.strikes,state:row.state,duplicate:true},200,origin);
-   const strikes=Math.min(3,Number(row.strikes)+1),state=strikes>=3?"blocked":"active";
-   const reason=String(p.reason??"salida").replace(/[^a-zA-Z0-9 áéíóúñ_-]/gi,"").slice(0,90);
-   const events=[...old.slice(-49),{event_id:p.event_id,reason,strike:strikes,occurred_at:new Date().toISOString()}];
-   const {data,error}=await db.from(TABLE).update({events,strikes,state,updated_at:new Date().toISOString()}).eq("id",row.id).eq("state","active").select("id").maybeSingle();
-   if(error||!data)return response({error:"INCIDENT_UNAVAILABLE"},409,origin);
-   return response({strikes,state},200,origin);
-  }
+  if(p.action==="incident")return response({strikes:row.strikes,state:row.state,ignored:true},200,origin);
   if(p.action==="submit"){
    const answers=row.answers??{};
    const incomplete=Array.from(ALLOWED).filter(k=>!complete(answers[k]));
