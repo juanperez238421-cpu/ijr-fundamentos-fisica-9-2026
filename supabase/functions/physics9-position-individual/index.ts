@@ -58,7 +58,7 @@ Deno.serve(async(req:Request)=>{
      .eq("exam_key",KEY).eq("student_email",student_email).maybeSingle();
    if(existingError)return response({error:"LOOKUP_UNAVAILABLE"},503,origin);
    if(existing){
-    if(existing.student_name.toLowerCase()!==student_name.toLowerCase()||existing.student_group!==student_group)return response({error:"STUDENT_DETAILS_MISMATCH"},403,origin);
+    if((existing.student_name.toLowerCase()!==student_name.toLowerCase()&&student_email!==config.additional_allowed_email)||existing.student_group!==student_group)return response({error:"STUDENT_DETAILS_MISMATCH"},403,origin);
     const {data:rotated,error:rotateError}=await db.from(TABLE).update({token_hash,updated_at:new Date().toISOString()}).eq("id",existing.id).select("id,student_name,student_email,student_group,answers,strikes,state,started_at,submitted_at").single();
     if(rotateError)return response({error:"RECOVERY_UNAVAILABLE"},503,origin);
     return response({...view(rotated),token:issued,recovered:true},200,origin);
