@@ -4,11 +4,11 @@ Instituto Jorge Robledo · Juan Diego Pérez · Periodo 2026.
 
 ## Estado de publicación
 
-- El código de la evaluación está completo y protegido por una lista de **un único correo institucional**, más un código privado individual.
-- La fila `public.physics9_motion_single_access_v1` permanece con `enabled=false`, `allowed_email=null` y `access_code_sha256=null` hasta que el docente aporte el correo del estudiante y autorice la apertura.
-- **No establecer un correo ficticio, ni compartir el código en este repositorio.**
+- La evaluación conserva una lista de **un único correo institucional autorizado**, sin PIN ni código adicional. El registro de correo es declarado, no verifica titularidad.
+- La tabla `public.physics9_motion_single_access_v1` limita el acceso a un correo institucional configurado. Inicialmente se habilitará únicamente una dirección de prueba ficticia para validación; luego debe reemplazarse por el correo real.
+- Correo ficticio de prueba, sin verificar que exista el buzón: `qa.fisica9.2026@ijr.edu.co`. Esta identidad no pertenece a un alumno real y debe reemplazarse antes de evaluar a un estudiante.
 - El acceso de un estudiante se controla realmente por Supabase Edge Function, no por deshabilitar solo un botón de HTML.
-- El correo institucional declarado más el código de acceso no equivale a autenticación SSO; debe entregarse el código únicamente por un canal privado al estudiante autorizado.
+- Sin código, cualquier persona que conozca el correo permitido podría declararlo. **No es un inicio de sesión de Microsoft ni autenticación institucional**; el docente debe contrastar identidad antes de asignar nota.
 
 ## Contenido y criterios
 
@@ -25,27 +25,26 @@ Instituto Jorge Robledo · Juan Diego Pérez · Periodo 2026.
 
 Supabase proyecto existente del IJR: `rlfxnjbqxbozjdzkbwlz`.
 
-- Tabla privada `public.physics9_motion_single_access_v1`: estado, email autorizado, hash SHA256 del código.
-- Tabla privada `public.physics9_motion_single_attempts_v1`: un intento máximo por email y actividad; permite reabrir el mismo intento usando correo + código y rotando el token de sesión.
+- Tabla privada `public.physics9_motion_single_access_v1`: estado de habilitación y correo autorizado, sin credenciales PIN.
+- Tabla privada `public.physics9_motion_single_attempts_v1`: un intento máximo por email y actividad; permite reabrir el mismo intento declarando el mismo correo, nombre y grupo, rotando el token de sesión. Cuando cambia el correo permitido, los tokens de la dirección anterior dejan de ser válidos.
 - Bitácora privada `private.physics9_motion_single_audit_v1`: snapshots e integridad SHA256, append-only.
 - Edge Function `physics9-position-individual`: `config`, `start`, `status`, `answer`, `incident`, `submit`.
 - El frontend solo recibe un token de sesión aleatorio y guarda una copia temporal en `sessionStorage`; nunca usa `service_role` ni consulta tablas de estudiantes directamente.
 - Una salida de pantalla no demuestra copia por sí misma. Tras tres incidencias el intento se bloquea para revisión.
 - No se fijó una fecha límite: el docente no la indicó para esta evaluación. No se hereda la fecha de Geometría 8°.
 
-## Activación segura — solo administrador Supabase
+## Identificación por correo y prueba temporal
 
-Una vez que el docente indique el email real autorizado, generar un código **aleatorio de 16 o más caracteres**, compartirlo exclusivamente con el estudiante por Teams y registrar su SHA256 **solo en la consola privada**. No colocar el código en el frontend ni en GitHub. El ajuste se hace una vez el docente confirme los datos.
+**Dirección ficticia de QA habilitada:** `qa.fisica9.2026@ijr.edu.co`.
 
-Ejemplo parametrizado (no ejecutable hasta sustituir valores privados):
+Para probar el formulario: usa un nombre de prueba (p. ej. `Prueba Fisica`), este correo y selecciona `9A`. No se envía ningún email y no se requiere que el buzón exista. Esto es un control de coincidencia de texto, no verificación de titularidad.
+
+Para entregar el examen a un estudiante real, el docente debe cambiar el correo autorizado en Supabase y evitar confundir intentos de QA con entregas calificables. El acceso anterior se revocará al cambiarlo.
 
 ```sql
--- Ejecutar únicamente por un administrador autenticado en Supabase.
--- Código secreto: mínimo 12 caracteres aleatorios de alta entropía, compartido fuera de banda.
+-- Solo desde el SQL Editor de Supabase, con permisos de administrador.
 UPDATE public.physics9_motion_single_access_v1
-SET allowed_email=lower(trim(:correo_institucional)),
-    access_code_sha256=encode(sha256(convert_to(:codigo_privado,'UTF8')),'hex'),
-    enabled=true,updated_at=now()
+SET allowed_email=lower(trim(:correo_institucional)),enabled=true,updated_at=now()
 WHERE exam_key='physics9-position-velocity-2026';
 ```
 
@@ -65,3 +64,5 @@ node --test evaluaciones/posicion-velocidad-individual/qa.test.cjs
 ```
 
 El workflow `.github/workflows/qa-physics9-individual-motion.yml` verifica estructura, 4 diagramas, registro individual, ausencia de soluciones en manifest y soporte de velocidades negativas.
+
+> **Nota de seguridad:** El correo por sí solo no autentica a nadie; evita atribuir una entrega a un estudiante sin comprobarla por otro medio.
