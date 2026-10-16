@@ -7,6 +7,7 @@ const KEY = "physics9-position-velocity-2026";
 const SETTINGS = "physics9_motion_single_access_v1";
 const TABLE = "physics9_motion_single_attempts_v1";
 const ALLOWED = new Set(["P01","P02","P03","P04"]);
+const CLOSES_AT="2026-10-16T17:00:00.000Z";
 const respondHeaders = (origin:string|null) => ({
  "Access-Control-Allow-Origin": origin===ORIGIN||origin==="http://localhost:8000"||origin==="http://127.0.0.1:8000" ? origin : ORIGIN,
  "Access-Control-Allow-Methods":"POST, OPTIONS",
