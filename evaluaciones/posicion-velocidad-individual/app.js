@@ -29,7 +29,7 @@ async function request(action,more={}){
   const r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:controller.signal,cache:"no-store"});
   const data=await r.json();
   if(!r.ok){
-   const dict={EXAM_NOT_ENABLED:"La evaluación aún no está habilitada por el docente.",ACCESS_DENIED:"El correo institucional o código individual no está autorizado.",STUDENT_DETAILS_MISMATCH:"El nombre o el grupo no coincide con el intento registrado.",INCOMPLETE_ANSWERS:"Revisa los cuatro ejercicios: cada uno requiere velocidad y desarrollo.",SESSION_BLOCKED:"La sesión está bloqueada para revisión docente.",ALREADY_SUBMITTED:"La evaluación ya fue entregada."};
+   const dict={EXAM_NOT_ENABLED:"La evaluación aún no está habilitada por el docente.",ACCESS_DENIED:"El correo institucional no está autorizado para esta evaluación.",STUDENT_DETAILS_MISMATCH:"El nombre o el grupo no coincide con el intento registrado.",INCOMPLETE_ANSWERS:"Revisa los cuatro ejercicios: cada uno requiere velocidad y desarrollo.",SESSION_BLOCKED:"La sesión está bloqueada para revisión docente.",ALREADY_SUBMITTED:"La evaluación ya fue entregada."};
    throw Error(dict[data.error]||data.error||"No se pudo conectar al servidor.");
   }
   return data;
@@ -129,17 +129,15 @@ async function start(e){
  const student_name=$("studentName").value.trim().replace(/\s+/g," ");
  const student_email=$("studentEmail").value.trim().toLowerCase();
  const student_group=$("studentGroup").value;
- const access_code=$("studentPin").value;
  if(student_name.length<3||!/^[a-z0-9][a-z0-9._+-]*@ijr\.edu\.co$/.test(student_email)||
-  !["9A","9B","9C","OTRO"].includes(student_group)||access_code.length<12||!$("studentAgree").checked){
-  warn("Completa nombre, correo @ijr.edu.co, grupo, código de acceso y acepta las reglas.");return;
+  !["9A","9B","9C","OTRO"].includes(student_group)||!$("studentAgree").checked){
+  warn("Completa nombre, correo institucional @ijr.edu.co, grupo y acepta las reglas.");return;
  }
  if(!manifest.length){warn("La evaluación no está disponible.");return}
  const isFullscreen=await fullscreen();if(!isFullscreen)return;
  $("previewStart").disabled=true;
  try{
-  const d=await request("start",{student_name,student_email,student_group,access_code,agreed:true});
-  $("studentPin").value="";
+  const d=await request("start",{student_name,student_email,student_group,agreed:true});
   state.session={attempt_id:d.attempt_id,token:d.token,student_name:d.student_name,student_group:d.student_group,student_email:d.student_email};
   state.strikes=d.strikes||0;state.startedAt=d.started_at;state.status=d.state;state.armed=d.state==="active";
   for(let i=0;i<COUNT;i++)state.answers[i]={value:String(d.answers?.["P"+two(i+1)]?.value||""),reasoning:String(d.answers?.["P"+two(i+1)]?.reasoning||"")};
@@ -222,7 +220,7 @@ async function recover(){
    $("studentLabel").textContent=d.student_name+" · "+d.student_group;status();
    await incident("recarga o reingreso de página");
   }else showResult(d.state,d.attempt_id,d.submitted_at);
- }catch(e){show("welcomeView");warn("No se pudo recuperar el intento. Usa tu correo y código para volver a acceder al único intento.");state.session=null}
+ }catch(e){show("welcomeView");warn("No se pudo recuperar el intento. Revisa la conexión y vuelve a registrarte con el mismo correo, nombre y grupo.");state.session=null}
 }
 function reset(){
  try{sessionStorage.removeItem(KEY)}catch{}
@@ -247,7 +245,7 @@ async function init(){
  try{await loadManifest()}catch(e){warn(e.message);return}
  try{
   const cfg=await request("config");authorized=cfg.enabled===true;
-  notice(authorized?"Evaluación individual habilitada. Ingresa tu correo institucional y código privado.":"Evaluación preparada. Pendiente de autorizar al estudiante mediante su correo institucional.");
+  notice(authorized?"Evaluación individual habilitada. Ingresa únicamente el correo institucional autorizado por el docente.":"Evaluación preparada. Pendiente de autorizar un correo institucional.");
   $("previewStart").disabled=!authorized;
  }catch(e){authorized=false;notice("No se pudo verificar el permiso de acceso. Informa al docente.",true)}
  await recover();status();
