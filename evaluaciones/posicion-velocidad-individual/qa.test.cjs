@@ -40,15 +40,20 @@ test("DOM IDs and script syntax",()=>{
  assert.deepEqual(missing,[]);
 });
 test("individual protected registration and persistence",()=>{
- for(const id of ["studentName","studentEmail","studentGroup","studentPin","studentAgree","previewStart","areaValue","reasoning","finishButton","receipt"])assert(html.includes('id="'+id+'"'));
- assert(html.includes("type=\"password\""));
+ for(const id of ["studentName","studentEmail","studentGroup","studentAgree","previewStart","areaValue","reasoning","finishButton","receipt"])assert(html.includes('id="'+id+'"'));
+ assert(!html.includes('id="studentPin"'));
+ assert(!html.includes("Código individual de acceso"));
  assert(js.includes('if(!authorized)'));
- assert(js.includes("access_code,agreed:true"));
+ assert(js.includes("student_name,student_email,student_group,agreed:true"));
+ assert(!js.includes("access_code"));
+ assert(!api.includes("p.access_code"));
  assert(js.includes('sessionStorage'));
  assert(js.includes('"start"')&&js.includes('"answer"')&&js.includes('"incident"')&&js.includes('"submit"'));
  assert(api.includes('const SETTINGS = "physics9_motion_single_access_v1"'));
  assert(api.includes('config.allowed_email!==student_email'));
- assert(api.includes('await hash(pin)!==config.access_code_sha256'));
+ assert(!api.includes('access_code_sha256'));
+ assert(api.includes('currentAccess.allowed_email!==row.student_email'));
+ assert(api.includes('ACCESS_REVOKED'));
  assert(api.includes('config.enabled'));
  assert(api.includes('"SESSION_REQUIRED"'));
  assert(api.includes('ALREADY_SUBMITTED'));
