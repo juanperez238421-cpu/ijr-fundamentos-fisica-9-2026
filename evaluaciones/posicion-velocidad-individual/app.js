@@ -42,8 +42,6 @@ function status(){
 function progress(){
  const total=state.answers.filter(complete).length;
  $("progress").textContent=total+" / "+COUNT;
- $("strikeDots").setAttribute("aria-label",state.strikes+" de 3 incidencias");
- Array.from($("strikeDots").children).forEach((n,i)=>n.classList.toggle("active",i<state.strikes));
  qs(".rail-item").forEach((b,i)=>{
   const isActive=i===state.problem,isDone=complete(state.answers[i]);
   b.classList.toggle("selected",isActive);b.classList.toggle("complete",isDone);
@@ -149,7 +147,7 @@ async function start(e){
 }
 function showResult(statusValue,receipt,stamp){
  state.status=statusValue;state.armed=false;
- $("incidentModal").classList.add("hidden");show("resultView");status();
+ show("resultView");status();
  const blocked=statusValue==="blocked";
  $("resultIcon").textContent=blocked?"!":"✓";
  $("resultHeading").textContent=blocked?"Evaluación bloqueada":"Evaluación enviada";
@@ -204,7 +202,6 @@ async function init(){
  $("reasoning").addEventListener("input",onInput);
  $("finishButton").addEventListener("click",submit);
  $("restartButton").addEventListener("click",reset);
- $("modalAction").addEventListener("click",resume);
  setInterval(()=>{if(state.startedAt&&["active","paused"].includes(state.status))$("clock").textContent=elapsed()},1000);
  try{await loadManifest()}catch(e){warn(e.message);return}
  try{
