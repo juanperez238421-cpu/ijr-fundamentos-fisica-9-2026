@@ -216,7 +216,7 @@ async function recover(){
   if(d.state==="active"){
    state.status="active";state.armed=true;show("examView");render();
    $("studentLabel").textContent=d.student_name+" · "+d.student_group;status();
-   await incident("recarga o reingreso de página");
+   // Recover the original token and draft without adding incidents.
   }else showResult(d.state,d.attempt_id,d.submitted_at);
  }catch(e){show("welcomeView");warn("No se pudo recuperar el intento. Revisa la conexión y vuelve a registrarte con el mismo correo, nombre y grupo.");state.session=null}
 }
