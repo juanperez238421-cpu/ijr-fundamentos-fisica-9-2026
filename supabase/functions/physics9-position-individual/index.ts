@@ -45,12 +45,10 @@ Deno.serve(async(req:Request)=>{
   }
   if(p.action==="start"){
    const student_name=name(p.student_name),student_email=email(p.student_email),student_group=p.student_group;
-   const pin=p.access_code;
-   if(!student_name||!student_email||!["9A","9B","9C","OTRO"].includes(String(student_group))||!p.agreed||
-     typeof pin!=="string"||pin.length<12||pin.length>32)return response({error:"REGISTRATION_INCOMPLETE"},400,origin);
-   const {data:config,error:configError}=await db.from(SETTINGS).select("enabled,allowed_email,access_code_sha256").eq("exam_key",KEY).single();
+   if(!student_name||!student_email||!["9A","9B","9C","OTRO"].includes(String(student_group))||p.agreed!==true)return response({error:"REGISTRATION_INCOMPLETE"},400,origin);
+   const {data:config,error:configError}=await db.from(SETTINGS).select("enabled,allowed_email").eq("exam_key",KEY).single();
    if(configError||!config||!config.enabled)return response({error:"EXAM_NOT_ENABLED"},403,origin);
-   if(config.allowed_email!==student_email||!config.access_code_sha256||await hash(pin)!==config.access_code_sha256)return response({error:"ACCESS_DENIED"},403,origin);
+   if(config.allowed_email!==student_email)return response({error:"ACCESS_DENIED"},403,origin);
    const issued=newToken(),token_hash=await hash(issued);
    const {data:existing,error:existingError}=await db.from(TABLE).select("id,student_name,student_email,student_group,answers,strikes,state,started_at,submitted_at")
      .eq("exam_key",KEY).eq("student_email",student_email).maybeSingle();
@@ -72,6 +70,10 @@ Deno.serve(async(req:Request)=>{
     .eq("id",p.attempt_id).eq("exam_key",KEY).eq("token_hash",t_hash).maybeSingle();
   if(loadError)return response({error:"SESSION_LOOKUP_UNAVAILABLE"},503,origin);
   if(!row)return response({error:"INVALID_SESSION"},401,origin);
+  // A previously valid test token cannot operate after the teacher changes the allowed email.
+  const {data:currentAccess,error:accessError}=await db.from(SETTINGS).select("enabled,allowed_email").eq("exam_key",KEY).single();
+  if(accessError)return response({error:"CONFIG_NOT_AVAILABLE"},503,origin);
+  if(!currentAccess?.enabled||currentAccess.allowed_email!==row.student_email)return response({error:"ACCESS_REVOKED"},403,origin);
   if(p.action==="status")return response(view(row),200,origin);
   if(row.state!=="active")return response({error:statusCode(row.state),...view(row)},409,origin);
   if(p.action==="answer"){
