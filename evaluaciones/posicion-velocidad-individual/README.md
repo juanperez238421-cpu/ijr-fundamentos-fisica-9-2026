@@ -30,14 +30,14 @@ Supabase proyecto existente del IJR: `rlfxnjbqxbozjdzkbwlz`.
 - Bitácora privada `private.physics9_motion_single_audit_v1`: snapshots e integridad SHA256, append-only.
 - Edge Function `physics9-position-individual`: `config`, `start`, `status`, `answer`, `incident`, `submit`.
 - El frontend solo recibe un token de sesión aleatorio y guarda una copia temporal en `sessionStorage`; nunca usa `service_role` ni consulta tablas de estudiantes directamente.
-- Una salida de pantalla no demuestra copia por sí misma. Tras tres incidencias el intento se bloquea para revisión.
-- No se fijó una fecha límite: el docente no la indicó para esta evaluación. No se hereda la fecha de Geometría 8°.
+- Las salidas de pestaña, pantalla completa, cambios de foco o recargas no generan nuevas incidencias. Los registros históricos se conservan y la Edge Function ignora eventos enviados por navegadores que mantienen la versión antigua.
+- El cierre de entregas es el **16 de octubre de 2026 a las 12:00 m. hora de Colombia** (`2026-10-16T17:00:00.000Z`). Supabase rechaza nuevos inicios y entregas después de ese momento. Los intentos y borradores anteriores permanecen.
 
 ## Identificación por correo y prueba temporal
 
 **Dirección ficticia de QA habilitada:** `qa.fisica9.2026@ijr.edu.co`.
 
-Para probar el formulario: usa un nombre de prueba (p. ej. `Prueba Fisica`), este correo y selecciona `9A`. No se envía ningún email y no se requiere que el buzón exista. Esto es un control de coincidencia de texto, no verificación de titularidad.
+Para probar el formulario: usa `QA` (alias autorizado del correo QA) o el nombre original `Nombre Prueba Fisica`, con este correo y grupo `9A`. El sistema reutiliza el único intento existente y no crea otro. No se envía ningún email y no se requiere que el buzón exista. Esto es un control de coincidencia de texto, no verificación de titularidad.
 
 Para entregar el examen a un estudiante real, el docente debe cambiar el correo autorizado en Supabase y evitar confundir intentos de QA con entregas calificables. El acceso anterior se revocará al cambiarlo.
 
@@ -78,3 +78,5 @@ UPDATE public.physics9_motion_single_access_v1
 SET additional_allowed_email = NULL, updated_at=now()
 WHERE exam_key='physics9-position-velocity-2026';
 ```
+
+**Protocolo durante una evaluación activa:** No sustituir tokens, no reiniciar intentos, no actualizar respuestas ni incidencias de Tomás desde administración. El cambio de código no requiere que el estudiante salga ni vuelva a registrarse.

@@ -48,7 +48,7 @@ test("individual protected registration and persistence",()=>{
  assert(!js.includes("access_code"));
  assert(!api.includes("p.access_code"));
  assert(js.includes('sessionStorage'));
- assert(js.includes('"start"')&&js.includes('"answer"')&&js.includes('"incident"')&&js.includes('"submit"'));
+ assert(js.includes('"start"')&&js.includes('"answer"')&&js.includes('"submit"'));
  assert(api.includes('const SETTINGS = "physics9_motion_single_access_v1"'));
  assert(api.includes('config.allowed_email!==student_email'));
  assert(!api.includes('access_code_sha256'));
@@ -70,17 +70,37 @@ test("negative velocity supported by browser, server and calculator",()=>{
  assert.equal(core.evaluate("(-4-8)/(9-5)"),-3);
  assert.equal(core.evaluate("(-6-(-4))/10"),-0.2);
 });
-test("three incident signals and anti-duplication protocol",()=>{
- for(const signal of ["fullscreenchange","visibilitychange","blur","incidentBusy","crypto.randomUUID"])assert(js.includes(signal));
- assert(api.includes('event_id')&&api.includes('duplicate:true'));
- assert(js.includes('MAX=3')&&api.includes('Math.min(3'));
+test("no tab or fullscreen penalties; cutoff is server enforced",()=>{
+ assert(!js.includes('document.addEventListener("visibilitychange"'));
+ assert(!js.includes('document.addEventListener("fullscreenchange"'));
+ assert(!js.includes('window.addEventListener("blur"'));
+ assert(!js.includes('await incident("recarga'));
+ assert(!js.includes('const isFullscreen=await fullscreen()'));
+ assert(!js.includes('id="strikeDots"'));
+ assert(!html.includes('id="strikeDots"'));
+ assert(api.includes('if(p.action==="incident")return response({strikes:row.strikes,state:row.state,ignored:true}'));
+ assert(!api.includes('Math.min(3'));
+ assert(api.includes('2026-10-16T17:00:00.000Z'));
+ assert(api.includes('timezone:\'America/Bogota\''));
+ assert(api.includes('if(p.action==="submit"){'));
+ assert(api.includes('if(!openUntilNoon())return response({error:"ASSESSMENT_CLOSED"},403,origin)'));
+ assert(api.includes('if(p.action==="answer"){'));
+ assert(html.includes('12:00 del mediodía'));
+ assert(js.includes('authorized=cfg.enabled===true&&cfg.open!==false'));
 });
 
 test("primary student access survives enabling a distinct QA email",()=>{
  assert(api.includes('config.allowed_email!==student_email&&config.additional_allowed_email!==student_email'));
  assert(api.includes('(currentAccess.allowed_email!==row.student_email&&currentAccess.additional_allowed_email!==row.student_email)'));
  assert.equal((api.split('select("enabled,allowed_email,additional_allowed_email")').length-1),2);
- assert.equal((api.match(/additional_allowed_email/g)||[]).length,4);
+ assert((api.match(/additional_allowed_email/g)||[]).length>=4);
  assert(!api.includes("qa.fisica9.2026@ijr.edu.co"));
  assert(!api.includes("tomas.hernandez@ijr.edu.co"));
+});
+
+test("QA short name can reuse the existing independent QA attempt",()=>{
+ assert(js.includes('student_name==="QA"'));
+ assert(api.includes('v.trim().length>=2'));
+ assert(api.includes('student_email!==config.additional_allowed_email'));
+ assert(api.includes('existing.student_group!==student_group'));
 });

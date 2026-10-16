@@ -29,7 +29,7 @@ async function request(action,more={}){
   const r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:controller.signal,cache:"no-store"});
   const data=await r.json();
   if(!r.ok){
-   const dict={EXAM_NOT_ENABLED:"La evaluación aún no está habilitada por el docente.",ACCESS_DENIED:"El correo institucional no está autorizado para esta evaluación.",STUDENT_DETAILS_MISMATCH:"El nombre o el grupo no coincide con el intento registrado.",INCOMPLETE_ANSWERS:"Revisa los cuatro ejercicios: cada uno requiere velocidad y desarrollo.",SESSION_BLOCKED:"La sesión está bloqueada para revisión docente.",ALREADY_SUBMITTED:"La evaluación ya fue entregada."};
+   const dict={EXAM_NOT_ENABLED:"La evaluación aún no está habilitada por el docente.",ACCESS_DENIED:"El correo institucional no está autorizado para esta evaluación.",STUDENT_DETAILS_MISMATCH:"El nombre o el grupo no coincide con el intento registrado.",ASSESSMENT_CLOSED:"El plazo de entrega finalizó hoy a las 12:00 m. (hora de Colombia). Las respuestas que alcanzaron a guardarse permanecen registradas.",INCOMPLETE_ANSWERS:"Revisa los cuatro ejercicios: cada uno requiere velocidad y desarrollo.",SESSION_BLOCKED:"La sesión está bloqueada para revisión docente.",ALREADY_SUBMITTED:"La evaluación ya fue entregada."};
    throw Error(dict[data.error]||data.error||"No se pudo conectar al servidor.");
   }
   return data;
@@ -42,8 +42,6 @@ function status(){
 function progress(){
  const total=state.answers.filter(complete).length;
  $("progress").textContent=total+" / "+COUNT;
- $("strikeDots").setAttribute("aria-label",state.strikes+" de 3 incidencias");
- Array.from($("strikeDots").children).forEach((n,i)=>n.classList.toggle("active",i<state.strikes));
  qs(".rail-item").forEach((b,i)=>{
   const isActive=i===state.problem,isDone=complete(state.answers[i]);
   b.classList.toggle("selected",isActive);b.classList.toggle("complete",isDone);
@@ -129,12 +127,11 @@ async function start(e){
  const student_name=$("studentName").value.trim().replace(/\s+/g," ");
  const student_email=$("studentEmail").value.trim().toLowerCase();
  const student_group=$("studentGroup").value;
- if(student_name.length<3||!/^[a-z0-9][a-z0-9._+-]*@ijr\.edu\.co$/.test(student_email)||
+ if((student_name.length<3&&!(student_name==="QA"&&student_email==="qa.fisica9.2026@ijr.edu.co"))||!/^[a-z0-9][a-z0-9._+-]*@ijr\.edu\.co$/.test(student_email)||
   !["9A","9B","9C","OTRO"].includes(student_group)||!$("studentAgree").checked){
   warn("Completa nombre, correo institucional @ijr.edu.co, grupo y acepta las reglas.");return;
  }
  if(!manifest.length){warn("La evaluación no está disponible.");return}
- const isFullscreen=await fullscreen();if(!isFullscreen)return;
  $("previewStart").disabled=true;
  try{
   const d=await request("start",{student_name,student_email,student_group,agreed:true});
@@ -146,42 +143,11 @@ async function start(e){
   else{showResult(d.state,d.attempt_id,d.submitted_at)}
  }catch(err){
   warn("No fue posible iniciar: "+err.message);
-  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
  }finally{$("previewStart").disabled=!authorized}
-}
-function modal(reason){
- const blocked=state.status==="blocked";
- $("modalEyebrow").textContent=blocked?"LÍMITE DE INCIDENCIAS":"CONTROL DE INTEGRIDAD";
- $("modalTitle").textContent=blocked?"Sesión bloqueada":"Salida detectada";
- $("modalText").textContent=blocked?"Se registraron tres incidencias. Consulta al docente.":"Se registró una salida ("+reason+"). Vuelve a pantalla completa para continuar.";
- $("modalStrikeCount").textContent=state.strikes+" de "+MAX+" incidencias";
- $("modalAction").textContent=blocked?"Ver comprobante":"Regresar a pantalla completa";
- $("modalSymbol").textContent=blocked?"×":"!";
- $("incidentModal").classList.remove("hidden");
-}
-async function incident(reason){
- if(state.status!=="active"||!state.armed||state.incidentBusy)return;
- state.armed=false;state.incidentBusy=true;state.status="paused";status();clearTimeout(saveTimer);
- try{
-  await saveChain.catch(()=>{});
-  const r=await request("incident",{event_id:crypto.randomUUID(),reason});
-  state.strikes=r.strikes;state.status=r.state==="blocked"?"blocked":"paused";
- }catch(e){warn("No se pudo guardar la incidencia: "+e.message)}
- finally{state.incidentBusy=false;status();progress();modal(reason)}
-}
-async function resume(){
- if(state.status==="blocked"){showResult("blocked");return}
- if(state.status!=="paused")return;
- if(!await fullscreen())return;
- try{
-  const s=await request("status");state.strikes=s.strikes;state.status=s.state;
-  if(s.state!=="active"){showResult(s.state);return}
-  state.armed=true;$("incidentModal").classList.add("hidden");status();progress();
- }catch(e){warn(e.message)}
 }
 function showResult(statusValue,receipt,stamp){
  state.status=statusValue;state.armed=false;
- $("incidentModal").classList.add("hidden");show("resultView");status();
+ show("resultView");status();
  const blocked=statusValue==="blocked";
  $("resultIcon").textContent=blocked?"!":"✓";
  $("resultHeading").textContent=blocked?"Evaluación bloqueada":"Evaluación enviada";
@@ -190,7 +156,7 @@ function showResult(statusValue,receipt,stamp){
   "\nGrupo: "+(state.session?.student_group||"")+
   "\nCorreo institucional: "+(state.session?.student_email||"")+
   "\nPreguntas completas: "+state.answers.filter(complete).length+" de 4"+
-  "\nIncidencias: "+state.strikes+" de 3"+
+
   (stamp?"\nHora de entrega: "+new Date(stamp).toLocaleString("es-CO"):"");
  $("receipt").textContent="Comprobante: "+(receipt||state.session?.attempt_id||"");
  persist();if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
@@ -218,7 +184,7 @@ async function recover(){
   if(d.state==="active"){
    state.status="active";state.armed=true;show("examView");render();
    $("studentLabel").textContent=d.student_name+" · "+d.student_group;status();
-   await incident("recarga o reingreso de página");
+   // Recover the original token and draft without adding incidents.
   }else showResult(d.state,d.attempt_id,d.submitted_at);
  }catch(e){show("welcomeView");warn("No se pudo recuperar el intento. Revisa la conexión y vuelve a registrarte con el mismo correo, nombre y grupo.");state.session=null}
 }
@@ -236,16 +202,11 @@ async function init(){
  $("reasoning").addEventListener("input",onInput);
  $("finishButton").addEventListener("click",submit);
  $("restartButton").addEventListener("click",reset);
- $("modalAction").addEventListener("click",resume);
- document.addEventListener("fullscreenchange",()=>{if(state.status==="active"&&state.armed&&!document.fullscreenElement)incident("salida de pantalla completa")});
- document.addEventListener("visibilitychange",()=>{if(document.hidden)incident("cambio de pestaña");else if(["paused","blocked"].includes(state.status)&&!state.incidentBusy)modal("cambio de pestaña")});
- window.addEventListener("blur",()=>{clearTimeout(focusTimer);focusTimer=setTimeout(()=>{if(!document.hasFocus()&&!document.hidden)incident("pérdida de foco")},750)});
- window.addEventListener("focus",()=>clearTimeout(focusTimer));
  setInterval(()=>{if(state.startedAt&&["active","paused"].includes(state.status))$("clock").textContent=elapsed()},1000);
  try{await loadManifest()}catch(e){warn(e.message);return}
  try{
-  const cfg=await request("config");authorized=cfg.enabled===true;
-  notice(authorized?"Evaluación individual habilitada. Ingresa únicamente el correo institucional autorizado por el docente.":"Evaluación preparada. Pendiente de autorizar un correo institucional.");
+  const cfg=await request("config");authorized=cfg.enabled===true&&cfg.open!==false;
+  notice(authorized?"Evaluación habilitada hasta hoy a las 12:00 m., hora de Colombia.":"Plazo cerrado o acceso pendiente de autorización.");
   $("previewStart").disabled=!authorized;
  }catch(e){authorized=false;notice("No se pudo verificar el permiso de acceso. Informa al docente.",true)}
  await recover();status();

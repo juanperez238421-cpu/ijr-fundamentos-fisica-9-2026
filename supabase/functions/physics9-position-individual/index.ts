@@ -7,6 +7,9 @@ const KEY = "physics9-position-velocity-2026";
 const SETTINGS = "physics9_motion_single_access_v1";
 const TABLE = "physics9_motion_single_attempts_v1";
 const ALLOWED = new Set(["P01","P02","P03","P04"]);
+const CLOSES_AT="2026-10-16T17:00:00.000Z";
+const openUntilNoon=()=>Date.now()<Date.parse(CLOSES_AT);
+const timeWindow=()=>({open:openUntilNoon(),closes_at:CLOSES_AT,timezone:'America/Bogota'});
 const respondHeaders = (origin:string|null) => ({
  "Access-Control-Allow-Origin": origin===ORIGIN||origin==="http://localhost:8000"||origin==="http://127.0.0.1:8000" ? origin : ORIGIN,
  "Access-Control-Allow-Methods":"POST, OPTIONS",
@@ -18,7 +21,7 @@ const respondHeaders = (origin:string|null) => ({
 const response=(data:unknown,status=200,origin:string|null=null) => new Response(JSON.stringify(data),{status,headers:respondHeaders(origin)});
 const uuid=(v:unknown) => typeof v==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 const email=(v:unknown) => typeof v==="string"&&v.trim().length<=160&&/^[a-z0-9][a-z0-9._+-]*@ijr\.edu\.co$/.test(v.trim().toLowerCase())?v.trim().toLowerCase():null;
-const name=(v:unknown) => typeof v==="string"&&v.trim().length>=3&&v.trim().length<=120&&/^[\p{L}\p{M} .'-]+$/u.test(v.trim())?v.trim().replace(/\s+/g," "):null;
+const name=(v:unknown) => typeof v==="string"&&v.trim().length>=2&&v.trim().length<=120&&/^[\p{L}\p{M} .'-]+$/u.test(v.trim())?v.trim().replace(/\s+/g," "):null;
 const tokenValid=(v:unknown) => typeof v==="string"&&/^[a-f0-9]{64}$/.test(v);
 const hash=async(v:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v))),x=>x.toString(16).padStart(2,"0")).join("");
 const newToken=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,"0")).join("");
@@ -41,7 +44,7 @@ Deno.serve(async(req:Request)=>{
   if(p.action==="config"){
    const {data,error}=await db.from(SETTINGS).select("enabled").eq("exam_key",KEY).single();
    if(error)return response({error:"CONFIG_NOT_AVAILABLE"},503,origin);
-   return response({enabled:data.enabled===true,individual:true,question_count:4},200,origin);
+   return response({enabled:data.enabled===true,individual:true,question_count:4,...timeWindow()},200,origin);
   }
   if(p.action==="start"){
    const student_name=name(p.student_name),student_email=email(p.student_email),student_group=p.student_group;
@@ -49,12 +52,13 @@ Deno.serve(async(req:Request)=>{
    const {data:config,error:configError}=await db.from(SETTINGS).select("enabled,allowed_email,additional_allowed_email").eq("exam_key",KEY).single();
    if(configError||!config||!config.enabled)return response({error:"EXAM_NOT_ENABLED"},403,origin);
    if(config.allowed_email!==student_email&&config.additional_allowed_email!==student_email)return response({error:"ACCESS_DENIED"},403,origin);
+   if(!openUntilNoon())return response({error:"ASSESSMENT_CLOSED",...timeWindow()},403,origin);
    const issued=newToken(),token_hash=await hash(issued);
    const {data:existing,error:existingError}=await db.from(TABLE).select("id,student_name,student_email,student_group,answers,strikes,state,started_at,submitted_at")
      .eq("exam_key",KEY).eq("student_email",student_email).maybeSingle();
    if(existingError)return response({error:"LOOKUP_UNAVAILABLE"},503,origin);
    if(existing){
-    if(existing.student_name.toLowerCase()!==student_name.toLowerCase()||existing.student_group!==student_group)return response({error:"STUDENT_DETAILS_MISMATCH"},403,origin);
+    if((existing.student_name.toLowerCase()!==student_name.toLowerCase()&&student_email!==config.additional_allowed_email)||existing.student_group!==student_group)return response({error:"STUDENT_DETAILS_MISMATCH"},403,origin);
     const {data:rotated,error:rotateError}=await db.from(TABLE).update({token_hash,updated_at:new Date().toISOString()}).eq("id",existing.id).select("id,student_name,student_email,student_group,answers,strikes,state,started_at,submitted_at").single();
     if(rotateError)return response({error:"RECOVERY_UNAVAILABLE"},503,origin);
     return response({...view(rotated),token:issued,recovered:true},200,origin);
@@ -74,7 +78,7 @@ Deno.serve(async(req:Request)=>{
   const {data:currentAccess,error:accessError}=await db.from(SETTINGS).select("enabled,allowed_email,additional_allowed_email").eq("exam_key",KEY).single();
   if(accessError)return response({error:"CONFIG_NOT_AVAILABLE"},503,origin);
   if(!currentAccess?.enabled||(currentAccess.allowed_email!==row.student_email&&currentAccess.additional_allowed_email!==row.student_email))return response({error:"ACCESS_REVOKED"},403,origin);
-  if(p.action==="status")return response(view(row),200,origin);
+  if(p.action==="status")return response({...view(row),...timeWindow()},200,origin);
   if(row.state!=="active")return response({error:statusCode(row.state),...view(row)},409,origin);
   if(p.action==="answer"){
    if(!ALLOWED.has(p.problem_id))return response({error:"INVALID_PROBLEM"},400,origin);
@@ -86,18 +90,9 @@ Deno.serve(async(req:Request)=>{
    if(error||!data)return response({error:"SAVE_UNAVAILABLE"},409,origin);
    return response({saved:true,problem_id:p.problem_id},200,origin);
   }
-  if(p.action==="incident"){
-   if(!uuid(p.event_id))return response({error:"INVALID_EVENT_ID"},400,origin);
-   const old=Array.isArray(row.events)?row.events:[];
-   if(old.some((e:any)=>e&&e.event_id===p.event_id))return response({strikes:row.strikes,state:row.state,duplicate:true},200,origin);
-   const strikes=Math.min(3,Number(row.strikes)+1),state=strikes>=3?"blocked":"active";
-   const reason=String(p.reason??"salida").replace(/[^a-zA-Z0-9 áéíóúñ_-]/gi,"").slice(0,90);
-   const events=[...old.slice(-49),{event_id:p.event_id,reason,strike:strikes,occurred_at:new Date().toISOString()}];
-   const {data,error}=await db.from(TABLE).update({events,strikes,state,updated_at:new Date().toISOString()}).eq("id",row.id).eq("state","active").select("id").maybeSingle();
-   if(error||!data)return response({error:"INCIDENT_UNAVAILABLE"},409,origin);
-   return response({strikes,state},200,origin);
-  }
+  if(p.action==="incident")return response({strikes:row.strikes,state:row.state,ignored:true},200,origin);
   if(p.action==="submit"){
+   if(!openUntilNoon())return response({error:"ASSESSMENT_CLOSED"},403,origin);
    const answers=row.answers??{};
    const incomplete=Array.from(ALLOWED).filter(k=>!complete(answers[k]));
    if(incomplete.length)return response({error:"INCOMPLETE_ANSWERS",missing:incomplete},422,origin);
