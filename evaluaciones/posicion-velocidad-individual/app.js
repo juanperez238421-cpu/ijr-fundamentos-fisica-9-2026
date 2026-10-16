@@ -29,7 +29,7 @@ async function request(action,more={}){
   const r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal:controller.signal,cache:"no-store"});
   const data=await r.json();
   if(!r.ok){
-   const dict={EXAM_NOT_ENABLED:"La evaluación aún no está habilitada por el docente.",ACCESS_DENIED:"El correo institucional no está autorizado para esta evaluación.",STUDENT_DETAILS_MISMATCH:"El nombre o el grupo no coincide con el intento registrado.",INCOMPLETE_ANSWERS:"Revisa los cuatro ejercicios: cada uno requiere velocidad y desarrollo.",SESSION_BLOCKED:"La sesión está bloqueada para revisión docente.",ALREADY_SUBMITTED:"La evaluación ya fue entregada."};
+   const dict={EXAM_NOT_ENABLED:"La evaluación aún no está habilitada por el docente.",ACCESS_DENIED:"El correo institucional no está autorizado para esta evaluación.",STUDENT_DETAILS_MISMATCH:"El nombre o el grupo no coincide con el intento registrado.",ASSESSMENT_CLOSED:"El plazo de entrega finalizó hoy a las 12:00 m. (hora de Colombia). Las respuestas que alcanzaron a guardarse permanecen registradas.",INCOMPLETE_ANSWERS:"Revisa los cuatro ejercicios: cada uno requiere velocidad y desarrollo.",SESSION_BLOCKED:"La sesión está bloqueada para revisión docente.",ALREADY_SUBMITTED:"La evaluación ya fue entregada."};
    throw Error(dict[data.error]||data.error||"No se pudo conectar al servidor.");
   }
   return data;
