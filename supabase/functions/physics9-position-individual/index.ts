@@ -8,6 +8,8 @@ const SETTINGS = "physics9_motion_single_access_v1";
 const TABLE = "physics9_motion_single_attempts_v1";
 const ALLOWED = new Set(["P01","P02","P03","P04"]);
 const CLOSES_AT="2026-10-16T17:00:00.000Z";
+const openUntilNoon=()=>Date.now()<Date.parse(CLOSES_AT);
+const timeWindow=()=>({open:openUntilNoon(),closes_at:CLOSES_AT,timezone:'America/Bogota'});
 const respondHeaders = (origin:string|null) => ({
  "Access-Control-Allow-Origin": origin===ORIGIN||origin==="http://localhost:8000"||origin==="http://127.0.0.1:8000" ? origin : ORIGIN,
  "Access-Control-Allow-Methods":"POST, OPTIONS",
@@ -42,7 +44,7 @@ Deno.serve(async(req:Request)=>{
   if(p.action==="config"){
    const {data,error}=await db.from(SETTINGS).select("enabled").eq("exam_key",KEY).single();
    if(error)return response({error:"CONFIG_NOT_AVAILABLE"},503,origin);
-   return response({enabled:data.enabled===true,individual:true,question_count:4},200,origin);
+   return response({enabled:data.enabled===true,individual:true,question_count:4,...timeWindow()},200,origin);
   }
   if(p.action==="start"){
    const student_name=name(p.student_name),student_email=email(p.student_email),student_group=p.student_group;
@@ -75,7 +77,7 @@ Deno.serve(async(req:Request)=>{
   const {data:currentAccess,error:accessError}=await db.from(SETTINGS).select("enabled,allowed_email,additional_allowed_email").eq("exam_key",KEY).single();
   if(accessError)return response({error:"CONFIG_NOT_AVAILABLE"},503,origin);
   if(!currentAccess?.enabled||(currentAccess.allowed_email!==row.student_email&&currentAccess.additional_allowed_email!==row.student_email))return response({error:"ACCESS_REVOKED"},403,origin);
-  if(p.action==="status")return response(view(row),200,origin);
+  if(p.action==="status")return response({...view(row),...timeWindow()},200,origin);
   if(row.state!=="active")return response({error:statusCode(row.state),...view(row)},409,origin);
   if(p.action==="answer"){
    if(!ALLOWED.has(p.problem_id))return response({error:"INVALID_PROBLEM"},400,origin);
