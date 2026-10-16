@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "course": "Fundamentos de Física 9°",
+  "topic": "Ecuación de posición y velocidad media por intervalos",
+  "public_exam_enabled": false,
+  "restricted_to_one_student": true,
+  "problems_expected": 4,
+  "instructions": "Interpreta cada diagrama posición-tiempo. Justifica con x(t), Δx = x_f − x_i y v_med = Δx/Δt. Escribe la velocidad solicitada con signo y unidades m/s.",
+  "problems": [
+    {
+      "id": "P01",
+      "title": "Posición y movimiento uniforme",
+      "statement": "Un móvil se desplaza sobre un eje recto. Su gráfica posición-tiempo comienza en x = 2 m cuando t = 0 s y pasa por x = 20 m cuando t = 6 s. Deduce la ecuación x(t), calcula x(5 s) y determina la velocidad media entre t = 1 s y t = 4 s.",
+      "prompt": "Velocidad media de 1 s a 4 s",
+      "unit": "m/s",
+      "hint": "Escribe x(t), las posiciones de los instantes solicitados y v = Δx/Δt.",
+      "diagram": "assets/p01-mru.svg",
+      "dimensions": "Eje horizontal: tiempo t (s) · Eje vertical: posición x (m)",
+      "ready": true
+    },
+    {
+      "id": "P02",
+      "title": "Velocidad por intervalos",
+      "statement": "Un objeto parte de x = 0 m. Entre 0 y 2 s avanza hasta 8 m; entre 2 y 5 s permanece en esa posición; entre 5 y 9 s regresa hasta x = −4 m. Calcula la velocidad media en los tres intervalos, explica cuándo está en reposo e identifica el tramo con velocidad negativa.",
+      "prompt": "Velocidad media de 5 s a 9 s",
+      "unit": "m/s",
+      "hint": "Organiza el desarrollo por intervalos: [0,2], [2,5] y [5,9] s.",
+      "diagram": "assets/p02-tramos.svg",
+      "dimensions": "Tres tramos: [0,2] s · [2,5] s · [5,9] s",
+      "ready": true
+    },
+    {
+      "id": "P03",
+      "title": "De la gráfica a la ecuación",
+      "statement": "En la gráfica, el móvil comienza en x = 18 m y su posición disminuye linealmente hasta x = 0 m en t = 9 s. Escribe la ecuación de posición en el intervalo 0 ≤ t ≤ 9 s, determina la posición en t = 7 s y calcula la velocidad media entre t = 2 s y t = 8 s.",
+      "prompt": "Velocidad media de 2 s a 8 s",
+      "unit": "m/s",
+      "hint": "Recuerda que la pendiente en una gráfica x(t) representa la velocidad.",
+      "diagram": "assets/p03-ecuacion.svg",
+      "dimensions": "La recta intersecta el eje de posición en x = 18 m",
+      "ready": true
+    },
+    {
+      "id": "P04",
+      "title": "Recorrido y velocidad media total",
+      "statement": "La gráfica representa un recorrido sobre una recta: t = 0 s, x = −4 m; t = 3 s, x = 2 m; t = 7 s, x = −6 m; t = 10 s, x = −6 m. Determina las velocidades medias de cada tramo, la distancia total recorrida, el desplazamiento total y la velocidad media en los 10 s.",
+      "prompt": "Velocidad media del recorrido (0 s a 10 s)",
+      "unit": "m/s",
+      "hint": "Distingue distancia total (siempre no negativa) de desplazamiento (x final − x inicial).",
+      "diagram": "assets/p04-recorrido.svg",
+      "dimensions": "Tramos: [0,3] s · [3,7] s · [7,10] s",
+      "ready": true
+    }
+  ]
+}
