@@ -1,0 +1,24 @@
+name: QA · Physics 9 individual motion exam
+on:
+  push:
+    paths:
+      - 'evaluaciones/posicion-velocidad-individual/**'
+      - 'supabase/functions/physics9-position-individual/**'
+      - '.github/workflows/qa-physics9-individual-motion.yml'
+  pull_request:
+    paths:
+      - 'evaluaciones/posicion-velocidad-individual/**'
+      - 'supabase/functions/physics9-position-individual/**'
+      - '.github/workflows/qa-physics9-individual-motion.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check content, structure, access rules and signed velocities
+        run: node --test evaluaciones/posicion-velocidad-individual/qa.test.cjs
