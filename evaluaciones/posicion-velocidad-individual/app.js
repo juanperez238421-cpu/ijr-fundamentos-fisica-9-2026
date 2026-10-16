@@ -235,7 +235,6 @@ async function init(){
  $("finishButton").addEventListener("click",submit);
  $("restartButton").addEventListener("click",reset);
  $("modalAction").addEventListener("click",resume);
- document.addEventListener("fullscreenchange",()=>{if(state.status==="active"&&state.armed&&!document.fullscreenElement)incident("salida de pantalla completa")});
  document.addEventListener("visibilitychange",()=>{if(document.hidden)incident("cambio de pestaña");else if(["paused","blocked"].includes(state.status)&&!state.incidentBusy)modal("cambio de pestaña")});
  window.addEventListener("blur",()=>{clearTimeout(focusTimer);focusTimer=setTimeout(()=>{if(!document.hasFocus()&&!document.hidden)incident("pérdida de foco")},750)});
  window.addEventListener("focus",()=>clearTimeout(focusTimer));
