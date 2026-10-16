@@ -206,7 +206,7 @@ async function init(){
  try{await loadManifest()}catch(e){warn(e.message);return}
  try{
   const cfg=await request("config");authorized=cfg.enabled===true&&cfg.open!==false;
-  notice(authorized?"Evaluación individual habilitada. Ingresa únicamente el correo institucional autorizado por el docente.":"Evaluación preparada. Pendiente de autorizar un correo institucional.");
+  notice(authorized?"Evaluación habilitada hasta hoy a las 12:00 m., hora de Colombia.":"Plazo cerrado o acceso pendiente de autorización.");
   $("previewStart").disabled=!authorized;
  }catch(e){authorized=false;notice("No se pudo verificar el permiso de acceso. Informa al docente.",true)}
  await recover();status();
