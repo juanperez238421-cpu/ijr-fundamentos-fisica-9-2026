@@ -205,7 +205,7 @@ async function init(){
  setInterval(()=>{if(state.startedAt&&["active","paused"].includes(state.status))$("clock").textContent=elapsed()},1000);
  try{await loadManifest()}catch(e){warn(e.message);return}
  try{
-  const cfg=await request("config");authorized=cfg.enabled===true;
+  const cfg=await request("config");authorized=cfg.enabled===true&&cfg.open!==false;
   notice(authorized?"Evaluación individual habilitada. Ingresa únicamente el correo institucional autorizado por el docente.":"Evaluación preparada. Pendiente de autorizar un correo institucional.");
   $("previewStart").disabled=!authorized;
  }catch(e){authorized=false;notice("No se pudo verificar el permiso de acceso. Informa al docente.",true)}
