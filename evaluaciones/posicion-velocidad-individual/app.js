@@ -235,8 +235,6 @@ async function init(){
  $("finishButton").addEventListener("click",submit);
  $("restartButton").addEventListener("click",reset);
  $("modalAction").addEventListener("click",resume);
- window.addEventListener("blur",()=>{clearTimeout(focusTimer);focusTimer=setTimeout(()=>{if(!document.hasFocus()&&!document.hidden)incident("pérdida de foco")},750)});
- window.addEventListener("focus",()=>clearTimeout(focusTimer));
  setInterval(()=>{if(state.startedAt&&["active","paused"].includes(state.status))$("clock").textContent=elapsed()},1000);
  try{await loadManifest()}catch(e){warn(e.message);return}
  try{
