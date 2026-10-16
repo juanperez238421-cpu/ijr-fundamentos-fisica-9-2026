@@ -134,7 +134,6 @@ async function start(e){
   warn("Completa nombre, correo institucional @ijr.edu.co, grupo y acepta las reglas.");return;
  }
  if(!manifest.length){warn("La evaluación no está disponible.");return}
- const isFullscreen=await fullscreen();if(!isFullscreen)return;
  $("previewStart").disabled=true;
  try{
   const d=await request("start",{student_name,student_email,student_group,agreed:true});
@@ -146,7 +145,6 @@ async function start(e){
   else{showResult(d.state,d.attempt_id,d.submitted_at)}
  }catch(err){
   warn("No fue posible iniciar: "+err.message);
-  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
  }finally{$("previewStart").disabled=!authorized}
 }
 function modal(reason){
