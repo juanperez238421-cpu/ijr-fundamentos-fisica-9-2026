@@ -92,6 +92,7 @@ Deno.serve(async(req:Request)=>{
   }
   if(p.action==="incident")return response({strikes:row.strikes,state:row.state,ignored:true},200,origin);
   if(p.action==="submit"){
+   if(!openUntilNoon())return response({error:"ASSESSMENT_CLOSED"},403,origin);
    const answers=row.answers??{};
    const incomplete=Array.from(ALLOWED).filter(k=>!complete(answers[k]));
    if(incomplete.length)return response({error:"INCOMPLETE_ANSWERS",missing:incomplete},422,origin);
