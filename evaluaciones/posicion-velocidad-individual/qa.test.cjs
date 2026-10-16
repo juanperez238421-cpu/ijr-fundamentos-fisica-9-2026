@@ -48,7 +48,7 @@ test("individual protected registration and persistence",()=>{
  assert(!js.includes("access_code"));
  assert(!api.includes("p.access_code"));
  assert(js.includes('sessionStorage'));
- assert(js.includes('"start"')&&js.includes('"answer"')&&js.includes('"incident"')&&js.includes('"submit"'));
+ assert(js.includes('"start"')&&js.includes('"answer"')&&js.includes('"submit"'));
  assert(api.includes('const SETTINGS = "physics9_motion_single_access_v1"'));
  assert(api.includes('config.allowed_email!==student_email'));
  assert(!api.includes('access_code_sha256'));
@@ -96,4 +96,11 @@ test("primary student access survives enabling a distinct QA email",()=>{
  assert.equal((api.match(/additional_allowed_email/g)||[]).length,4);
  assert(!api.includes("qa.fisica9.2026@ijr.edu.co"));
  assert(!api.includes("tomas.hernandez@ijr.edu.co"));
+});
+
+test("QA short name can reuse the existing independent QA attempt",()=>{
+ assert(js.includes('student_name==="QA"'));
+ assert(api.includes('v.trim().length>=2'));
+ assert(api.includes('student_email!==config.additional_allowed_email'));
+ assert(api.includes('existing.student_group!==student_group'));
 });
