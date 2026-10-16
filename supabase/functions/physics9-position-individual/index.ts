@@ -21,7 +21,7 @@ const respondHeaders = (origin:string|null) => ({
 const response=(data:unknown,status=200,origin:string|null=null) => new Response(JSON.stringify(data),{status,headers:respondHeaders(origin)});
 const uuid=(v:unknown) => typeof v==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 const email=(v:unknown) => typeof v==="string"&&v.trim().length<=160&&/^[a-z0-9][a-z0-9._+-]*@ijr\.edu\.co$/.test(v.trim().toLowerCase())?v.trim().toLowerCase():null;
-const name=(v:unknown) => typeof v==="string"&&v.trim().length>=3&&v.trim().length<=120&&/^[\p{L}\p{M} .'-]+$/u.test(v.trim())?v.trim().replace(/\s+/g," "):null;
+const name=(v:unknown) => typeof v==="string"&&v.trim().length>=2&&v.trim().length<=120&&/^[\p{L}\p{M} .'-]+$/u.test(v.trim())?v.trim().replace(/\s+/g," "):null;
 const tokenValid=(v:unknown) => typeof v==="string"&&/^[a-f0-9]{64}$/.test(v);
 const hash=async(v:string)=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v))),x=>x.toString(16).padStart(2,"0")).join("");
 const newToken=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,"0")).join("");
