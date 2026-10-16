@@ -147,36 +147,6 @@ async function start(e){
   warn("No fue posible iniciar: "+err.message);
  }finally{$("previewStart").disabled=!authorized}
 }
-function modal(reason){
- const blocked=state.status==="blocked";
- $("modalEyebrow").textContent=blocked?"LÍMITE DE INCIDENCIAS":"CONTROL DE INTEGRIDAD";
- $("modalTitle").textContent=blocked?"Sesión bloqueada":"Salida detectada";
- $("modalText").textContent=blocked?"Se registraron tres incidencias. Consulta al docente.":"Se registró una salida ("+reason+"). Vuelve a pantalla completa para continuar.";
- $("modalStrikeCount").textContent=state.strikes+" de "+MAX+" incidencias";
- $("modalAction").textContent=blocked?"Ver comprobante":"Regresar a pantalla completa";
- $("modalSymbol").textContent=blocked?"×":"!";
- $("incidentModal").classList.remove("hidden");
-}
-async function incident(reason){
- if(state.status!=="active"||!state.armed||state.incidentBusy)return;
- state.armed=false;state.incidentBusy=true;state.status="paused";status();clearTimeout(saveTimer);
- try{
-  await saveChain.catch(()=>{});
-  const r=await request("incident",{event_id:crypto.randomUUID(),reason});
-  state.strikes=r.strikes;state.status=r.state==="blocked"?"blocked":"paused";
- }catch(e){warn("No se pudo guardar la incidencia: "+e.message)}
- finally{state.incidentBusy=false;status();progress();modal(reason)}
-}
-async function resume(){
- if(state.status==="blocked"){showResult("blocked");return}
- if(state.status!=="paused")return;
- if(!await fullscreen())return;
- try{
-  const s=await request("status");state.strikes=s.strikes;state.status=s.state;
-  if(s.state!=="active"){showResult(s.state);return}
-  state.armed=true;$("incidentModal").classList.add("hidden");status();progress();
- }catch(e){warn(e.message)}
-}
 function showResult(statusValue,receipt,stamp){
  state.status=statusValue;state.armed=false;
  $("incidentModal").classList.add("hidden");show("resultView");status();
