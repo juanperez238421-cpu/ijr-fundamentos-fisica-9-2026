@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <meta name="theme-color" content="#f6f8fa">
+ <meta name="description" content="Evaluación individual auditable de caída libre para Física 9° · Instituto Jorge Robledo">
+ <title>Free Fall Lab · Evaluación de Física 9.º · IJR</title>
+ <link rel="stylesheet" href="./styles.css">
+ <script type="module" src="./app.js"></script>
+</head>
+<body>
+ <div class="shell">
+  <header class="topbar">
+   <a class="brand" href="../../" aria-label="Volver al curso de Física 9">
+    <img src="../posicion-velocidad-individual/assets/escudo-institucional-original.svg" alt="Escudo institucional" width="49" height="56">
+    <span><strong>INSTITUTO JORGE ROBLEDO</strong><small>FÍSICA 09 / ACADEMIC ASSESSMENT</small></span>
+   </a>
+   <div class="top-actions"><span class="course-chip">PERÍODO III · 2026</span><button id="teacherLink" class="quiet" type="button">Acceso docente</button></div>
+  </header>
+  <main>
+   <section id="welcome" class="welcome">
+    <div class="intro">
+     <span class="eyebrow"><i></i> CINEMÁTICA · MOVIMIENTO VERTICAL</span>
+     <h1>La gravedad no cambia.<br><em>Tu razonamiento importa.</em></h1>
+     <p class="lead">Evaluación individual de <strong>caída libre y lanzamiento vertical</strong>. Resuelve tres situaciones reales, justifica tus ecuaciones y registra resultados con precisión y unidades.</p>
+     <div class="feature-strip">
+      <div><strong>03</strong><span>problemas</span></div><div><strong>09</strong><span>valores numéricos</span></div><div><strong>g = 32</strong><span>ft/s²</span></div>
+     </div>
+     <div class="explainer"><strong>Before you begin</strong><p>Use the upward direction as positive: <b>y(t) = y₀ + v₀t − ½gt²</b>. Heights are measured from the ground. A downward velocity is negative. You may enter decimals with a comma or a period. No automatic penalty for changing tabs.</p></div>
+     <form id="startForm" class="gate" autocomplete="off">
+      <label for="inviteCode">Código individual entregado por el docente</label>
+      <div class="input-row"><input id="inviteCode" type="text" required maxlength="35" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX" spellcheck="false" autocapitalize="characters" aria-describedby="startHint"><button type="submit" class="primary" id="startBtn">Comenzar <span aria-hidden="true">→</span></button></div>
+      <p id="startHint" class="hint">Cada código permite un único intento. Tus respuestas se guardan de forma privada.</p>
+      <p id="startMsg" class="alert" role="status" aria-live="polite"></p>
+     </form>
+    </div>
+    <div class="hero-visual">
+     <div class="visual-overline"><span>FREE FALL / VECTOR FIELD</span><span>PHYSICS · 09</span></div>
+     <svg viewBox="0 0 530 430" role="img" aria-label="Esquema vectorial del movimiento vertical: esfera, velocidad inicial y gravedad descendente">
+      <defs><linearGradient id="bgGradient" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e8f4f4"/><stop offset="1" stop-color="#fff"/></linearGradient><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#ca714c"/></marker></defs>
+      <rect width="530" height="430" rx="12" fill="url(#bgGradient)"/>
+      <g stroke="#d5e8e7" stroke-width="1"><path d="M65 55V368M145 55V368M225 55V368M305 55V368M385 55V368M465 55V368"/><path d="M45 80H495M45 145H495M45 210H495M45 275H495M45 340H495"/></g>
+      <rect x="74" y="187" width="115" height="181" rx="3" fill="#dce8e5" stroke="#376e66" stroke-width="2"/><path d="M72 185H191" stroke="#21594f" stroke-width="7"/>
+      <g fill="#fff" stroke="#8daaa4"><rect x="91" y="220" width="28" height="35"/><rect x="143" y="220" width="28" height="35"/><rect x="91" y="282" width="28" height="35"/><rect x="143" y="282" width="28" height="35"/></g>
+      <path d="M40 368H490" stroke="#285b51" stroke-width="6" stroke-linecap="round"/>
+      <path d="M268 85V348" stroke="#9dbcb5" stroke-width="2.5" stroke-dasharray="7 8"/>
+      <circle cx="268" cy="147" r="20" fill="#fff" stroke="#195f67" stroke-width="5"/><circle cx="263" cy="141" r="6" fill="#c9eae5"/>
+      <path d="M323 150V283" stroke="#ca714c" stroke-width="5" marker-end="url(#arr)"/>
+      <path d="M226 160H205M226 160V368" stroke="#216457" stroke-width="2.5" stroke-dasharray="5 7"/>
+      <g fill="#28544e" font-family="Arial,sans-serif" font-size="17" font-weight="700"><text x="335" y="221">g ↓</text><text x="198" y="103">y₀</text></g>
+      <g fill="#64827f" font-family="Arial,sans-serif" font-size="13"><text x="42" y="402">VERTICAL AXIS / + UP</text><text x="352" y="402">GROUND · y = 0</text></g>
+     </svg>
+     <p>MODELO FÍSICO · SIN RESISTENCIA DEL AIRE</p>
+    </div>
+   </section>
+   <section id="exam" class="hidden" aria-label="Cuestionario de caída libre">
+    <div class="exam-head"><div><p class="eyebrow">EVALUACIÓN EN CURSO</p><h1>Free Fall <em>Assessment.</em></h1><p id="studentLabel" class="muted"></p></div><div class="exam-summary"><div><span>TIEMPO RESTANTE</span><strong id="clock" aria-live="off">--:--</strong></div><div><span>GUARDADOS</span><strong id="countSaved">0 / 3</strong></div></div></div>
+    <div class="exam-grid">
+     <nav class="steps" aria-label="Problemas"><strong>YOUR EXAM</strong><p>Selecciona un problema.</p><div id="stepButtons"></div><div class="side-instruction"><strong>Convención de signos</strong><p>Arriba (+) · Abajo (−)</p><p>Las velocidades solicitadas requieren signo. Introduce solo el número; la unidad está indicada.</p></div></nav>
+     <div class="problem-col">
+      <article class="problem-card">
+       <div class="card-kicker"><span id="numberPill">PROBLEMA 01 DE 03</span><span>VERTICAL MOTION</span></div>
+       <h2 id="problemTitle"></h2><p id="problemStatement" class="statement"></p>
+       <div id="diagram" class="diagram" role="group" aria-label="Ilustración física del ejercicio"></div>
+       <div class="diagram-foot"><span>VECTOR DIAGRAM / SCHEMATIC</span><span>NOT TO SCALE</span></div>
+       <h3>1. Numerical answers</h3>
+       <div id="answerFields" class="answer-fields"></div>
+       <h3>2. Explain your work</h3>
+       <label for="reasoning" class="sr-only">Procedimiento, ecuaciones y justificación</label><textarea id="reasoning" maxlength="4000" rows="6" placeholder="Write the equation, substitute values, solve, and interpret the sign and unit of each result."></textarea>
+       <p class="hint">Explica los tres resultados de este ejercicio. Para entregar se requieren al menos 20 caracteres de procedimiento.</p>
+      </article>
+      <div class="controls"><button type="button" class="secondary" id="previousBtn">← Anterior</button><p id="saveMsg" role="status"></p><button type="button" class="secondary" id="saveBtn">Guardar respuestas</button><button type="button" class="primary" id="nextBtn">Siguiente →</button></div>
+      <button type="button" class="submit" id="submitBtn">Enviar evaluación definitiva</button><p id="submitMsg" class="alert" role="status"></p>
+     </div>
+    </div>
+   </section>
+   <section id="receipt" class="receipt-view hidden"><div class="receipt-card"><div class="success-mark">✓</div><p class="eyebrow">REGISTRO AUDITABLE</p><h1 id="receiptTitle">Entrega registrada</h1><p id="receiptText">Las respuestas fueron registradas. La calificación definitiva requiere revisión docente.</p><div id="receiptData" class="receipt-data"></div><button class="secondary" id="receiptExit" type="button">Volver al inicio</button></div></section>
+   <section id="teacher" class="teacher hidden">
+    <div class="teacher-head"><div><p class="eyebrow">CONSOLa SEGURA · SOLO DOCENTES</p><h1>Control de evaluación</h1><p>MFA (doble factor) obligatorio · Resultados y tolerancias privados</p></div><button class="secondary" id="teacherExit" type="button">← Volver</button></div>
+    <div id="teacherLogin" class="teacher-login">
+     <form id="teacherForm"><h2>Iniciar sesión institucional</h2><label for="teacherEmail">Correo</label><input type="email" id="teacherEmail" autocomplete="username" required placeholder="docente@ijr.edu.co">
+     <label for="teacherPassword">Contraseña de Supabase Auth</label><input type="password" id="teacherPassword" autocomplete="current-password" required>
+     <button class="primary" type="submit">Verificar credenciales</button></form>
+     <form id="mfaForm" class="hidden"><h2>Verificación en dos pasos</h2><p>Ingresa el código de tu autenticador TOTP.</p><label for="mfaCode">Código de 6 dígitos</label><input id="mfaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button class="primary">Verificar segundo factor</button></form>
+     <p class="alert" id="teacherLoginMsg" role="status"></p>
+    </div>
+    <div id="teacherConsole" class="hidden">
+     <div class="teacher-tabs"><button id="settingsTab" class="active" type="button">Configuración</button><button id="studentsTab" type="button">Invitaciones</button><button id="resultsTab" type="button">Resultados</button><button id="auditTab" type="button">Auditoría</button><button id="logoutBtn" type="button">Cerrar sesión</button></div>
+     <div id="teacherSettings" class="admin-panel">
+      <h2>Parámetros del examen</h2><p>La comparación se hace en el servidor: error máximo = máx(tolerancia absoluta, tolerancia relativa × |valor exacto|).</p>
+      <form id="settingsForm"><div class="setting-grid">
+       <label>Duración por intento (min)<input id="duration" type="number" min="10" max="180" step="1"></label>
+       <label>Tolerancia relativa (%)<input id="relative" type="number" min="0" max="10" step="0.1"></label>
+       <label>Tolerancia absoluta de tiempo (s)<input id="tolTime" type="number" min="0" max="3" step="0.01"></label>
+       <label>Tolerancia absoluta de altura (ft)<input id="tolHeight" type="number" min="0" max="50" step="0.1"></label>
+       <label>Tolerancia absoluta de velocidad (ft/s)<input id="tolVelocity" type="number" min="0" max="20" step="0.1"></label>
+       <label>Apertura (hora local)<input id="opens" type="datetime-local"></label>
+       <label>Cierre (hora local)<input id="closes" type="datetime-local"></label>
+      </div><label class="checkline"><input id="enabled" type="checkbox"> Habilitar nuevos intentos y entregas</label>
+      <label class="checkline"><input id="showScore" type="checkbox"> Mostrar la nota final únicamente después de revisión docente</label><button class="primary" type="submit">Guardar configuración</button></form>
+      <p class="alert" id="settingsMsg" role="status"></p>
+     </div>
+     <div id="teacherStudents" class="admin-panel hidden"><h2>Generar códigos individuales</h2><p>Escribe un alumno por línea en formato <code>Nombre y apellido | 9A</code>. Los códigos de alta entropía se muestran una sola vez; entrégalos por canal privado.</p><textarea id="studentBatch" rows="6" placeholder="Estudiante Ejemplo | 9A"></textarea><button class="primary" id="issueBtn" type="button">Generar códigos</button><div class="code-output" id="codesOut" aria-live="polite"></div><h3>Estudiantes registrados</h3><div id="roster" class="table-scroll"></div></div>
+     <div id="teacherResults" class="admin-panel hidden"><h2>Entregas y calificaciones</h2><p>La nota automática (/5) considera exclusivamente 9 resultados numéricos. La explicación debe revisarse antes de cerrar una calificación.</p><button class="secondary" id="refreshResults" type="button">Actualizar</button><div id="resultsTable" class="table-scroll"></div><div id="reviewPane"></div></div>
+     <div id="teacherAudit" class="admin-panel hidden"><h2>Bitácora de eventos</h2><button class="secondary" id="refreshAudit" type="button">Actualizar bitácora</button><div id="auditData" class="table-scroll"></div></div>
+    </div>
+   </section>
+  </main>
+  <footer><span>© Instituto Jorge Robledo · Fundamentos de Física 9.º · 2026</span><span>Las respuestas y las notas no se publican en GitHub Pages.</span></footer>
+ </div>
+</body>
+</html>
