@@ -4,9 +4,13 @@ const URL="https://rlfxnjbqxbozjdzkbwlz.supabase.co";
 const PUBLIC_KEY="sb_publishable_rmVOQ3Orx49KpW_4uMqYew_c2HpcA87";
 const STORAGE="ijr-physics9-freefall-v1";
 const $=id=>document.getElementById(id);
+const UNIT_CHOICES={
+ time:["s","min","ft","ft/s"],height:["ft","m","s","ft/s"],velocity:["ft/s","m/s","ft","s"]
+};
+const MEASURE_TYPE={impact_time:"time",peak_time:"time",height_observation:"height",max_height:"height",velocity_observation:"velocity",impact_velocity:"velocity"};
 const fieldsByProblem={1:["impact_time","height_observation","velocity_observation"],2:["peak_time","max_height","impact_time"],3:["height_observation","impact_time","impact_velocity"]};
-const names={EXAM_NOT_OPEN:"La evaluación no está abierta. Consulta al docente.",INVALID_CODE:"Código inválido o revocado.",TEMPORARILY_BLOCKED:"Demasiados intentos. Inténtalo más tarde.",INVALID_SESSION:"Sesión no válida. Ingresa nuevamente tu código.",DEADLINE_REACHED:"Se cumplió el plazo de entrega definido por el servidor.",REVISION_CONFLICT:"La respuesta cambió en otra sesión. Recarga el intento antes de continuar.",INCOMPLETE_ANSWERS:"Faltan resultados numéricos o un procedimiento de al menos 20 caracteres.",INVALID_NUMBER:"Ingresa solo números; se admite el signo menos y los decimales.",TEACHER_MFA_REQUIRED:"Debes iniciar sesión con una cuenta docente y MFA habilitado."};
-let current=null,index=0,dirty=false,supabase=null,teacherResults=[],teacherInfo=null,selectedReview=null;
+const names={EXAM_NOT_OPEN:"La evaluación no está abierta. Consulta al docente.",INVALID_CODE:"Código inválido o revocado.",TEMPORARILY_BLOCKED:"Demasiados intentos. Inténtalo más tarde.",INVALID_SESSION:"Sesión no válida. Ingresa nuevamente tu código.",DEADLINE_REACHED:"Se cumplió el plazo de entrega definido por el servidor.",REVISION_CONFLICT:"La respuesta cambió en otra sesión. Recarga el intento antes de continuar.",INCOMPLETE_ANSWERS:"Faltan valores numéricos o unidades en alguno de los tres problemas.",INVALID_NUMBER:"Ingresa solo números; se admite el signo menos y los decimales.",INVALID_UNITS:"Selecciona una unidad en cada resultado.",EVIDENCE_REQUIRED:"Debes subir un PDF o una imagen con el procedimiento antes de entregar.",FILE_TOO_LARGE:"El archivo excede 5 MB.",UNSUPPORTED_FILE_TYPE:"Solo se admiten archivos PDF, JPG, PNG o WEBP.",FILE_REQUIRED:"Selecciona un PDF o imagen antes de subir.",EVIDENCE_SAVE_FAILED:"No se pudo registrar el archivo. Inténtalo de nuevo.",TEACHER_MFA_REQUIRED:"Debes iniciar sesión con una cuenta docente y MFA habilitado."};
+let current=null,index=0,dirty=false,uploadInProgress=false,supabase=null,teacherResults=[],teacherInfo=null,selectedReview=null;
 const errorText=(code)=>names[code]||code||"No se completó la solicitud.";
 const notice=(id,text,ok=false)=>{const el=$(id);el.textContent=text;el.classList.toggle("ok",ok)};
 const show=id=>["welcome","exam","receipt","teacher"].forEach(n=>$(n).classList.toggle("hidden",n!==id));
@@ -51,7 +55,7 @@ function drawNavigation(){
  const wrap=$("stepButtons");wrap.replaceChildren();
  current.questions.forEach((q,i)=>{
   const el=document.createElement("button");el.type="button";el.className="step-btn"+(i===index?" selected":"");
-  const done=!!current.answers?.[String(i+1)]?.reasoning&&fieldsByProblem[i+1].every(f=>current.answers?.[String(i+1)]?.values?.[f]?.trim());
+  const done=fieldsByProblem[i+1].every(f=>current.answers?.[String(i+1)]?.values?.[f]?.trim()&&current.answers?.[String(i+1)]?.units?.[f]);
   const num=document.createElement("span");num.className="step-num";num.textContent=String(i+1).padStart(2,"0");
   const label=document.createElement("span");label.className="step-copy";
   const a=document.createElement("b");a.textContent="Problem "+(i+1);
@@ -62,12 +66,12 @@ function drawNavigation(){
   el.addEventListener("click",async()=>{if(i!==index)await goTo(i)});
   wrap.append(el);
  });
- const saved=[1,2,3].filter(n=>!!current.answers?.[String(n)]&&fieldsByProblem[n].every(f=>current.answers[String(n)].values?.[f]?.trim())&&current.answers[String(n)].reasoning?.trim().length>=20).length;
+ const saved=[1,2,3].filter(n=>fieldsByProblem[n].every(f=>current.answers?.[String(n)]?.values?.[f]?.trim()&&current.answers?.[String(n)]?.units?.[f])).length;
  $("countSaved").textContent=saved+" / 3";
 }
 function renderProblem(){
  if(!current||current.state!=="active")return;
- const q=current.questions[index],one=current.answers?.[String(index+1)]||{values:{},reasoning:""};
+ const q=current.questions[index],one=current.answers?.[String(index+1)]||{values:{},units:{}};
  $("studentLabel").textContent=current.student_name+" · "+current.group+" · Respuestas con registro privado";
  $("numberPill").textContent="PROBLEMA "+String(index+1).padStart(2,"0")+" DE 03";
  $("problemTitle").textContent=q.title;
@@ -80,18 +84,25 @@ function renderProblem(){
   const unit=document.createElement("div");unit.className="with-unit";
   const input=document.createElement("input");input.id="metric-"+f.id;input.type="text";input.inputMode="decimal";input.autocomplete="off";input.spellcheck=false;input.placeholder=f.unit==="ft/s"?"−96.00":"0.00";
   input.value=one.values?.[f.id]||"";input.addEventListener("input",()=>{dirty=true;$("saveMsg").textContent="Cambios sin guardar";});
-  const suffix=document.createElement("span");suffix.textContent=f.unit;unit.append(input,suffix);wrap.append(label,unit);box.append(wrap);
+  const selector=document.createElement("select");selector.id="unit-"+f.id;selector.setAttribute("aria-label","Seleccionar unidad para "+f.label);
+  const blank=document.createElement("option");blank.value="";blank.textContent="Unidad";selector.append(blank);
+  for(const u of UNIT_CHOICES[MEASURE_TYPE[f.id]]){
+   const option=document.createElement("option");option.value=u;option.textContent=u;selector.append(option);
+  }
+  selector.value=one.units?.[f.id]||"";
+  selector.addEventListener("change",()=>{dirty=true;$("saveMsg").textContent="Cambios sin guardar"});
+  unit.append(input,selector);wrap.append(label,unit);box.append(wrap);
  });
- $("reasoning").value=one.reasoning||"";
+ updateEvidenceStatus();
  dirty=false;$("saveMsg").textContent="Sin cambios pendientes";
  $("previousBtn").disabled=index===0;$("nextBtn").disabled=index===2;
  drawNavigation();
  updateClock();
 }
 function collect(){
- const q=current.questions[index],values={};
- for(const f of q.fields)values[f.id]=$("metric-"+f.id).value.trim();
- return {values,reasoning:$("reasoning").value.trim()};
+ const q=current.questions[index],values={},units={};
+ for(const f of q.fields){values[f.id]=$("metric-"+f.id).value.trim();units[f.id]=$("unit-"+f.id).value;}
+ return {values,units};
 }
 function validValue(s){return /^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(s)&&Number.isFinite(Number(s.replace(",",".")));}
 async function save(){
@@ -99,7 +110,7 @@ async function save(){
  const a=collect();
  if(Object.values(a.values).some(s=>s&&!validValue(s))){notice("saveMsg","Hay números no válidos.");return false;}
  try{
-  const result=await request("save",{...getToken(),question_number:index+1,revision:current.revision,values:a.values,reasoning:a.reasoning});
+  const result=await request("save",{...getToken(),question_number:index+1,revision:current.revision,values:a.values,units:a.units});
   current.revision=result.revision;current.answers={...current.answers,[String(index+1)]:a};
   dirty=false;$("saveMsg").textContent="✓ Guardado en servidor";
   drawNavigation();return true;
@@ -133,7 +144,39 @@ $("startForm").addEventListener("submit",async e=>{
  try{const res=await request("start",{code});await initializeAssessment(res);notice("startMsg","",true)}
  catch(e){notice("startMsg",e.message)}finally{$("startBtn").disabled=false}
 });
-$("reasoning").addEventListener("input",()=>{dirty=true;$("saveMsg").textContent="Cambios sin guardar"});
+function updateEvidenceStatus(){
+ const item=current?.evidence;
+ const status=$("evidenceStatus");
+ status.textContent=item?"✓ Procedimiento guardado de forma privada: "+item.name+" ("+(item.size/1024/1024).toFixed(2)+" MB) · "+new Date(item.uploaded_at).toLocaleString("es-CO"):"Todavía no has subido el procedimiento. Es obligatorio antes de entregar.";
+ status.classList.toggle("ready",!!item);
+}
+$("uploadEvidenceBtn").addEventListener("click",async()=>{
+ if(!current||current.state!=="active"||uploadInProgress)return;
+ const file=$("evidenceFile").files?.[0];
+ if(!file){notice("evidenceStatus","Selecciona un PDF o imagen.",false);return;}
+ if(file.size>5242880||file.size<64){notice("evidenceStatus","El archivo debe tener entre 64 bytes y 5 MB.");return;}
+ if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(file.type)){notice("evidenceStatus","Formato no admitido; utiliza PDF, JPG, PNG o WEBP.");return;}
+ const token=getToken();if(!token){notice("evidenceStatus","Inicia sesión con tu código antes de subir.");return;}
+ uploadInProgress=true;$("uploadEvidenceBtn").disabled=true;$("submitBtn").disabled=true;
+ notice("evidenceStatus","Subiendo archivo y verificando su integridad...");
+ try{
+  const form=new FormData();
+  form.append("action","upload");
+  form.append("attempt_id",token.attempt_id);
+  form.append("session_token",token.session_token);
+  form.append("file",file,file.name);
+  const controller=new AbortController(),tid=setTimeout(()=>controller.abort(),70000);
+  let response;
+  try{response=await fetch(API,{method:"POST",body:form,signal:controller.signal,cache:"no-store"});}
+  finally{clearTimeout(tid)}
+  const data=await response.json();
+  if(!response.ok)throw Error(errorText(data.error));
+  current.evidence=data.evidence;
+  $("evidenceFile").value="";
+  updateEvidenceStatus();
+ }catch(e){notice("evidenceStatus",e.message||"No se pudo cargar el archivo.");}
+ finally{uploadInProgress=false;$("uploadEvidenceBtn").disabled=false;$("submitBtn").disabled=false;}
+});
 $("previousBtn").addEventListener("click",()=>goTo(Math.max(index-1,0)));
 $("nextBtn").addEventListener("click",()=>goTo(Math.min(index+1,2)));
 $("saveBtn").addEventListener("click",save);
@@ -144,8 +187,10 @@ function setSubmitDialog(open){
  else $("submitBtn").focus();
 }
 $("submitBtn").addEventListener("click",async()=>{
+ if(uploadInProgress)return;
  if(dirty&&!await save())return;
  if(!current||current.state!=="active")return;
+ if(!current.evidence){notice("submitMsg","Debes subir el procedimiento como PDF o imagen para presentar la evaluación.");$("evidenceFile").focus();return;}
  setSubmitDialog(true);
 });
 $("cancelSubmission").addEventListener("click",()=>setSubmitDialog(false));
@@ -279,9 +324,9 @@ async function loadResults(){
   const rows=res.results.map(a=>{
    const btn=document.createElement("button");btn.type="button";btn.textContent="Revisar";
    btn.addEventListener("click",()=>renderReview(a));
-   return [a.student.student_name,a.student.group_code,a.state,a.numeric_score??"—",a.final_score??"Sin revisar",a.submitted_at?new Date(a.submitted_at).toLocaleString("es-CO"):"—",btn];
+   return [a.student.student_name,a.student.group_code,a.state,a.numeric_score??"—",a.final_score??"Sin revisar",a.evidence?.name||"Sin adjunto",a.submitted_at?new Date(a.submitted_at).toLocaleString("es-CO"):"—",btn];
   });
-  $("resultsTable").replaceChildren(table(["Estudiante","Grupo","Estado","Auto / 5","Final / 5","Entregado","Detalle"],rows));
+  $("resultsTable").replaceChildren(table(["Estudiante","Grupo","Estado","Auto / 5","Final / 5","Archivo","Entregado","Detalle"],rows));
  }catch(e){$("resultsTable").textContent=e.message}
 }
 $("refreshResults").addEventListener("click",loadResults);
@@ -291,17 +336,38 @@ function renderReview(a){
  const h=document.createElement("h3");h.textContent=a.student.student_name+" · "+a.student.group_code+" · "+a.id;box.append(h);
  const summary=document.createElement("p");summary.textContent="Calificación numérica: "+(a.numeric_score??"pendiente")+" / 5 · Calificación revisada: "+(a.final_score??"pendiente");box.append(summary);
  const details=document.createElement("details"),summ=document.createElement("summary");summ.textContent="Ver los nueve valores, diferencias y tolerancias";
- const pre=document.createElement("pre");pre.textContent=(a.breakdown||[]).map(x=>"P"+x.question+" · "+x.field+": estudiante="+x.submitted+", exacto="+Number(x.expected).toFixed(5)+", ±"+Number(x.epsilon).toFixed(5)+" => "+(x.correct?"CORRECTO":"REVISAR")).join("\n")||"Aún no ha entregado.";
+ const pre=document.createElement("pre");pre.textContent=(a.breakdown||[]).map(x=>"P"+x.question+" · "+x.field+": estudiante="+x.submitted+" "+(x.submitted_unit||"(sin unidad histórica)")+
+ (x.normalized_base===null?"":", valor normalizado="+Number(x.normalized_base).toFixed(5))+
+ ", exacto="+Number(x.expected).toFixed(5)+" "+(x.expected_unit||"")+ ", ±"+Number(x.epsilon).toFixed(5)+
+ " => "+(x.correct?"CORRECTO":"REVISAR UNIDAD O VALOR")).join("\n")||"Aún no ha entregado.";
  details.append(summ,pre);box.append(details);
- const answers=document.createElement("details"),as=document.createElement("summary");as.textContent="Procedimientos escritos";
- const p=document.createElement("pre");p.textContent=[1,2,3].map(n=>"PROBLEMA "+n+"\n"+(a.answers?.[String(n)]?.reasoning||"(sin guardar)")).join("\n\n");
- answers.append(as,p);box.append(answers);
+ if(a.evidence){
+  const proof=document.createElement("div");proof.className="evidence-review";
+  const h=document.createElement("strong");h.textContent="Archivo de procedimiento: "+a.evidence.name+" · "+(a.evidence.size/1024/1024).toFixed(2)+" MB";
+  const digest=document.createElement("p");digest.className="hint";digest.textContent="SHA-256: "+a.evidence.sha256;
+  const btn=document.createElement("button");btn.type="button";btn.className="secondary";btn.textContent="Generar enlace privado de descarga (90 s)";
+  const linkWrap=document.createElement("div");linkWrap.className="download-area";
+  btn.addEventListener("click",async()=>{
+   btn.disabled=true;linkWrap.textContent="Verificando acceso y generando enlace...";
+   try{
+    const result=await request("admin_evidence_link",{attempt_id:a.id},true);
+    const link=document.createElement("a");link.href=result.url;link.target="_blank";link.rel="noopener noreferrer";
+    link.textContent="Descargar archivo para revisión (expira en 90 segundos)";
+    linkWrap.replaceChildren(link);
+   }catch(err){linkWrap.textContent=err.message}finally{btn.disabled=false}
+  });
+  proof.append(h,digest,btn,linkWrap);box.append(proof);
+ }else{
+  const old=document.createElement("p");old.className="hint";
+  old.textContent="Esta entrega no tiene archivo adjunto (registro de versión anterior).";
+  box.append(old);
+ }
  if(a.state==="submitted"){
   const form=document.createElement("form");
   const label=document.createElement("label");label.textContent="Nota definitiva (0–5)";
   const score=document.createElement("input");score.type="number";score.min="0";score.max="5";score.step="0.01";score.required=true;score.value=a.final_score??a.numeric_score??"0";
   const noteLabel=document.createElement("label");noteLabel.textContent="Justificación de revisión (mínimo 10 caracteres)";
-  const note=document.createElement("textarea");note.rows=3;note.required=true;note.value=a.teacher_feedback||"Valoración de las ecuaciones, unidades y procedimiento.";
+  const note=document.createElement("textarea");note.rows=3;note.required=true;note.value=a.teacher_feedback||"Revisión manual del archivo de procedimiento, operaciones, ecuaciones, signos y unidades.";
   const btn=document.createElement("button");btn.type="submit";btn.className="primary";btn.textContent="Registrar revisión docente";
   const msg=document.createElement("p");msg.className="alert";
   form.append(label,score,noteLabel,note,btn,msg);
