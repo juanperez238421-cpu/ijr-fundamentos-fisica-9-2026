@@ -1,0 +1,25 @@
+name: QA · Physics 9 Free Fall
+on:
+  pull_request:
+    paths:
+      - "evaluaciones/caida-libre/**"
+      - "supabase/functions/physics9-freefall-exam/**"
+      - "supabase/migrations/20261103_physics9_freefall_**"
+      - ".github/workflows/qa-physics9-freefall.yml"
+  push:
+    branches: [main]
+    paths:
+      - "evaluaciones/caida-libre/**"
+      - "supabase/functions/physics9-freefall-exam/**"
+      - "supabase/migrations/20261103_physics9_freefall_**"
+      - ".github/workflows/qa-physics9-freefall.yml"
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node and numeric/scientific contracts
+        run: node --test evaluaciones/caida-libre/qa.test.cjs
