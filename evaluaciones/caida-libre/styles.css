@@ -7,3 +7,29 @@
 .modal-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:end;margin-top:26px}
 .modal-actions button{min-height:44px}
 @media(max-width:540px){.modal-surface{padding:23px}.modal-actions{flex-direction:column-reverse}.modal-actions button{width:100%}}
+
+/* Numeric response + student-selected unit in the same field. */
+.with-unit select{width:92px;flex:0 0 92px;border:1px solid #cad8d3;border-left:0;border-radius:0 8px 8px 0;background:#eaf1ee;color:#255e54;padding:11px 7px;font-weight:800;font-size:13px;min-width:0}
+.with-unit select:focus{outline:2px solid var(--teal);outline-offset:1px}
+.answer-item label{min-height:43px}
+.answer-fields{grid-template-columns:repeat(3,minmax(0,1fr))}
+.evidence-card{background:#fff;border:1px solid #cee2dc;border-radius:17px;padding:27px 30px;margin:18px 0 0;box-shadow:var(--shadow)}
+.evidence-header{display:flex;align-items:center;gap:13px;margin-bottom:8px}
+.evidence-header h2{margin:0;font-size:24px}
+.evidence-header .eyebrow{margin:0;font-size:10px}
+.evidence-icon{display:grid;place-items:center;flex-shrink:0;border-radius:12px;width:49px;height:49px;background:#e4f3ef;color:var(--teal);font-size:30px}
+.evidence-card p{font-size:13px;color:#58726a}
+.evidence-label{display:block;margin-top:16px;font-size:13px;font-weight:800;color:var(--ink)}
+.evidence-card input[type=file]{display:block;border:1px dashed #a8c9be;background:#f7fbf9;border-radius:10px;margin:8px 0 12px;padding:15px;width:100%;max-width:100%;color:var(--ink)}
+.evidence-card input[type=file]::file-selector-button{border:none;border-radius:7px;color:#164f45;background:#e0efeb;padding:9px 12px;margin-right:10px;font-weight:700;cursor:pointer}
+.evidence-actions{display:flex;flex-wrap:wrap;align-items:center;gap:15px}
+.evidence-actions .hint{flex:1;min-width:210px}
+.upload-status{border-radius:9px;background:#fff6ef;border:1px solid #eddbcb;color:#8d5a3d!important;margin:18px 0 0!important;padding:12px}
+.upload-status.ready{background:#e8f6ee;border-color:#badcc9;color:#1b6850!important}
+.evidence-review{border:1px solid #d9e7e2;background:#f5faf7;padding:16px;margin:16px 0;border-radius:10px}
+.evidence-review strong{display:block;font-size:13px}
+.evidence-review .hint{overflow-wrap:anywhere}
+.download-area{margin-top:12px}
+.download-area a{text-decoration:underline;color:#096558;font-weight:700}
+@media(max-width:1050px){.answer-fields{grid-template-columns:1fr}.answer-item label{min-height:unset}}
+@media(max-width:790px){.evidence-card{padding:19px}.with-unit select{flex-basis:90px;width:90px}}

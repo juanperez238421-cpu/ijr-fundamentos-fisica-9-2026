@@ -7,6 +7,8 @@ const ANON = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const ORIGIN = "https://juanperez238421-cpu.github.io";
 const TEST_ORIGINS = new Set([ORIGIN, "http://localhost:8000", "http://127.0.0.1:8000"]);
 const EXAM = "freefall-9-2026";
+const EVIDENCE_BUCKET = "physics9-freefall-procedures";
+const EVIDENCE_MAX_BYTES = 5242880;
 const db = createClient(URL, SERVICE, {auth:{persistSession:false,autoRefreshToken:false}});
 const enc = new TextEncoder();
 const json = (data:unknown,status=200,origin:string|null=null) => new Response(JSON.stringify(data),{status,headers:{
@@ -31,6 +33,15 @@ const round2=(x:number)=>Math.round((x+Number.EPSILON)*100)/100;
 const TYPE_BY_FIELD:Record<string,string>={impact_time:"time",peak_time:"time",height_observation:"height",max_height:"height",velocity_observation:"velocity",impact_velocity:"velocity"};
 const FIELDS:Record<number,string[]>={1:["impact_time","height_observation","velocity_observation"],2:["peak_time","max_height","impact_time"],3:["height_observation","impact_time","impact_velocity"]};
 type Row=Record<string,any>;
+const UNIT_KIND:Record<string,string>={"s":"time","min":"time","ft":"height","m":"height","ft/s":"velocity","m/s":"velocity"};
+const ALL_UNITS=new Set(Object.keys(UNIT_KIND));
+function toBaseUnits(value:number,unit:string):number{
+ switch(unit){case "min":return value*60;case "m":case "m/s":return value/0.3048;default:return value;}
+}
+function validAnswerUnit(value:unknown):value is string {return typeof value==="string"&&ALL_UNITS.has(value);}
+function permittedUnit(field:string,unit:string):boolean{return UNIT_KIND[unit]===TYPE_BY_FIELD[field];}
+const evidencePublic=(e:Row|null)=>e?{name:e.original_name,size:Number(e.size_bytes),mime_type:e.mime_type,uploaded_at:e.uploaded_at,sha256:e.sha256_hex}:null;
+
 function exactAnswer(q:Row,field:string):number {
  const h=Number(q.height_ft),v=Number(q.velocity_fts),g=Number(q.gravity_fts2),t=Number(q.observation_s);
  const impact=(v+Math.sqrt(v*v+2*g*h))/g;
@@ -92,8 +103,12 @@ async function asStudent(p:Row):Promise<Row|null> {
 }
 async function studentView(a:Row,s:Row,session:string|null=null){
  const qs=await questions(a.variant_ids);
+ const {data:evidence,error:evidenceErr}=await db.from("physics9_ff_evidence_v1")
+  .select("original_name,size_bytes,mime_type,uploaded_at,sha256_hex")
+  .eq("attempt_id",a.id).maybeSingle();
+ if(evidenceErr)throw Error("EVIDENCE_LOOKUP_FAILED");
  const out:Row={attempt_id:a.id,student_name:a.student_name,group:a.group_code,state:a.state,answers:a.answers,revision:a.revision,started_at:a.started_at,deadline_at:a.deadline_at,
-  closed:Date.now()>=Date.parse(a.deadline_at)||!isOpen(s),questions:qs.map(publicQuestion),
+  closed:Date.now()>=Date.parse(a.deadline_at)||!isOpen(s),evidence:evidencePublic(evidence),questions:qs.map(publicQuestion),
   submitted_at:a.submitted_at,receipt:a.state==="submitted"?a.id:null};
  if(s.show_final_score&&a.final_score!==null)out.final_score=Number(a.final_score);
  if(session)out.session_token=session;
@@ -172,9 +187,13 @@ async function handleStudent(p:Row,origin:string|null,ip:string){
   if(![1,2,3].includes(qn)||!Number.isInteger(p.revision)||p.revision!==a.revision)return json({error:"REVISION_CONFLICT",revision:a.revision},409,origin);
   if(!p.values||typeof p.values!=="object"||Array.isArray(p.values)||Object.keys(p.values).sort().join("|")!==FIELDS[qn].slice().sort().join("|"))return json({error:"INVALID_FIELDS"},400,origin);
   if(FIELDS[qn].some(key=>typeof p.values[key]!=="string"||p.values[key].length>40||(p.values[key].trim()!==""&&nstr(p.values[key])===null)))return json({error:"INVALID_NUMBER"},400,origin);
-  const reasoning=typeof p.reasoning==="string"?p.reasoning.trim():"";
-  if(reasoning.length>4000)return json({error:"REASONING_TOO_LONG"},400,origin);
-  const updated={...a.answers,[String(qn)]:{values:p.values,reasoning}};
+  // Answers are exclusively numeric values + explicit student-selected units.
+  if(!p.units||typeof p.units!=="object"||Array.isArray(p.units)||
+     Object.keys(p.units).sort().join("|")!==FIELDS[qn].slice().sort().join("|"))
+     return json({error:"INVALID_UNITS"},400,origin);
+  if(FIELDS[qn].some(key=>!["",...ALL_UNITS].includes(p.units[key])))
+     return json({error:"INVALID_UNITS"},400,origin);
+  const updated={...a.answers,[String(qn)]:{values:p.values,units:p.units}};
   const {data,error}=await db.from("physics9_ff_attempts_v1").update({answers:updated,revision:a.revision+1,updated_at:new Date().toISOString()}).eq("id",a.id).eq("state","active").eq("revision",a.revision).select("revision").maybeSingle();
   if(error||!data)return json({error:"REVISION_CONFLICT"},409,origin);
   return json({saved:true,revision:data.revision},200,origin);
@@ -183,26 +202,84 @@ async function handleStudent(p:Row,origin:string|null,ip:string){
   if(!Number.isInteger(p.revision)||p.revision!==a.revision)return json({error:"REVISION_CONFLICT",revision:a.revision},409,origin);
   for(const n of [1,2,3]){
    const one=a.answers?.[String(n)];
-   if(!one||typeof one.reasoning!=="string"||one.reasoning.trim().length<20||FIELDS[n].some(key=>nstr(one.values?.[key])===null))return json({error:"INCOMPLETE_ANSWERS",question:n},422,origin);
+   if(!one||FIELDS[n].some(key=>nstr(one.values?.[key])===null||!validAnswerUnit(one.units?.[key])))
+    return json({error:"INCOMPLETE_ANSWERS",question:n},422,origin);
   }
+  const {data:evidence,error:evidenceError}=await db.from("physics9_ff_evidence_v1").select("attempt_id,sha256_hex").eq("attempt_id",a.id).maybeSingle();
+  if(evidenceError)throw Error("EVIDENCE_LOOKUP_FAILED");
+  if(!evidence)return json({error:"EVIDENCE_REQUIRED"},422,origin);
   const qs=await questions(a.variant_ids);
   const details:Row[]=[];
   let correct=0;
   for(let i=0;i<3;i++){
    const q=qs[i],one=a.answers[String(i+1)];
    for(const field of FIELDS[i+1]){
-    const expected=exactAnswer(q,field),actual=nstr(one.values[field])!,epsilon=tolerance(expected,field,s),pass=Math.abs(actual-expected)<=epsilon+1e-10;
+    const expected=exactAnswer(q,field),actual=nstr(one.values[field])!;
+    const unit=one.units[field] as string,unit_correct=permittedUnit(field,unit);
+    const normalized=unit_correct?toBaseUnits(actual,unit):null;
+    const epsilon=tolerance(expected,field,s);
+    const numeric_correct=normalized!==null&&Math.abs(normalized-expected)<=epsilon+1e-10;
+    const pass=unit_correct&&numeric_correct;
     if(pass)correct++;
-    details.push({question:i+1,field,submitted:actual,expected,epsilon,correct:pass});
+    details.push({question:i+1,field,submitted:actual,submitted_unit:unit,normalized_base:normalized,
+      expected,expected_unit:TYPE_BY_FIELD[field]==="time"?"s":TYPE_BY_FIELD[field]==="height"?"ft":"ft/s",
+      epsilon,unit_correct,numeric_correct,correct:pass});
    }
   }
   const numeric_score=round2(5*correct/9),now=new Date().toISOString();
   const {data,error}=await db.from("physics9_ff_attempts_v1").update({state:"submitted",submitted_at:now,numeric_score,breakdown:details,revision:a.revision+1,updated_at:now}).eq("id",a.id).eq("state","active").eq("revision",a.revision).select("id,submitted_at").maybeSingle();
   if(error||!data)return json({error:"SUBMIT_CONFLICT"},409,origin);
-  return json({receipt:data.id,submitted_at:now,submitted:true,message:"Submission recorded. Teacher review pending."},200,origin);
+  return json({receipt:data.id,submitted_at:now,submitted:true,message:"Numeric answers, selected units and private procedure evidence recorded. Teacher review pending."},200,origin);
  }
  return json({error:"UNKNOWN_ACTION"},400,origin);
 }
+// The upload token is never stored as plain text; students cannot read the storage bucket.
+// Multipart request avoids base64 expansion and limits the payload to one PDF/photo, <= 5 MiB.
+function detectMime(bytes:Uint8Array):{mime:string;ext:string}|null{
+ const prefix=(a:number[])=>a.every((v,i)=>bytes[i]===v);
+ if(prefix([0x25,0x50,0x44,0x46,0x2d]))return{mime:"application/pdf",ext:"pdf"};
+ if(prefix([0xff,0xd8,0xff]))return{mime:"image/jpeg",ext:"jpg"};
+ if(prefix([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))return{mime:"image/png",ext:"png"};
+ if(bytes.length>=12&&prefix([0x52,0x49,0x46,0x46])&&[0x57,0x45,0x42,0x50].every((v,i)=>bytes[i+8]===v))return{mime:"image/webp",ext:"webp"};
+ return null;
+}
+async function uploadEvidence(req:Request,origin:string|null):Promise<Response>{
+ const size=Number(req.headers.get("content-length")||0);
+ if(size>5700000)return json({error:"FILE_TOO_LARGE"},413,origin);
+ let form:FormData;try{form=await req.formData()}catch{return json({error:"INVALID_UPLOAD"},400,origin)}
+ if(form.get("action")!=="upload")return json({error:"INVALID_UPLOAD"},400,origin);
+ const rawFile=form.get("file");
+ if(!(rawFile instanceof File))return json({error:"FILE_REQUIRED"},400,origin);
+ if(rawFile.size<64||rawFile.size>EVIDENCE_MAX_BYTES)return json({error:"FILE_TOO_LARGE"},413,origin);
+ if(rawFile.name.length<1||rawFile.name.length>160)return json({error:"FILE_NAME_INVALID"},400,origin);
+ const p={attempt_id:form.get("attempt_id"),session_token:form.get("session_token")};
+ const a=await asStudent(p),s=await settings();
+ if(!a)return json({error:"INVALID_SESSION"},401,origin);
+ if(a.state!=="active"||!isOpen(s)||Date.now()>=Date.parse(a.deadline_at))return json({error:"DEADLINE_REACHED"},403,origin);
+ const bytes=new Uint8Array(await rawFile.arrayBuffer());
+ const detected=detectMime(bytes);
+ if(!detected||rawFile.type!==detected.mime)return json({error:"UNSUPPORTED_FILE_TYPE"},415,origin);
+ const checksum=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),n=>n.toString(16).padStart(2,"0")).join("");
+ const object_path=a.id+"/"+crypto.randomUUID()+"."+detected.ext;
+ const fileName=rawFile.name.normalize("NFC").replace(/[\\/\x00-\x1f\x7f]/g,"_").slice(0,160);
+ const {error:storeError}=await db.storage.from(EVIDENCE_BUCKET).upload(object_path,bytes,{
+   contentType:detected.mime,cacheControl:"0",upsert:false
+ });
+ if(storeError)throw Error("EVIDENCE_STORAGE_FAILED");
+ const {data:row,error:metadataError}=await db.from("physics9_ff_evidence_v1").upsert({
+   attempt_id:a.id,object_path,original_name:fileName,mime_type:detected.mime,
+   size_bytes:bytes.byteLength,sha256_hex:checksum,uploaded_at:new Date().toISOString()
+ },{onConflict:"attempt_id"}).select("original_name,size_bytes,mime_type,uploaded_at,sha256_hex").single();
+ if(metadataError||!row){
+   await db.storage.from(EVIDENCE_BUCKET).remove([object_path]);
+   return json({error:"EVIDENCE_SAVE_FAILED"},409,origin);
+ }
+ await record("procedure_evidence_uploaded","student",a.id,{
+  sha256:checksum,size:bytes.byteLength,mime:detected.mime,version:"new_or_replaced"
+ });
+ return json({uploaded:true,evidence:evidencePublic(row)},200,origin);
+}
+
 async function handleTeacher(p:Row,req:Request,origin:string|null){
  const userId=await teacherIdentity(req);
  if(!userId)return json({error:"TEACHER_MFA_REQUIRED"},403,origin);
@@ -251,17 +328,37 @@ async function handleTeacher(p:Row,req:Request,origin:string|null){
   const {data:rows,error}=await db.from("physics9_ff_attempts_v1").select("*").order("started_at",{ascending:false}).limit(300);
   if(error)throw Error("RESULT_LOOKUP_FAILED");
   const {data:invite}=await db.from("physics9_ff_invites_v1").select("id,student_name,group_code");
+  const {data:evidence}=await db.from("physics9_ff_evidence_v1")
+   .select("attempt_id,original_name,mime_type,size_bytes,sha256_hex,uploaded_at").limit(300);
+  const byEvidence=new Map((evidence||[]).map(x=>[x.attempt_id,evidencePublic(x)]));
   const byId=new Map((invite||[]).map(x=>[x.id,x]));
   return json({results:(rows||[]).map((a:Row)=>({
    id:a.id,student:byId.get(a.invite_id)||{student_name:"(Unknown)",group_code:"?"},state:a.state,started_at:a.started_at,submitted_at:a.submitted_at,
    answers:a.answers,breakdown:a.breakdown,numeric_score:a.numeric_score,final_score:a.final_score,teacher_feedback:a.teacher_feedback,reviewed_at:a.reviewed_at,
-   variant_ids:a.variant_ids
+   variant_ids:a.variant_ids,evidence:byEvidence.get(a.id)||null
   }))},200,origin);
+ }
+ if(action==="admin_evidence_link"){
+  if(!validUuid(p.attempt_id))return json({error:"INVALID_ATTEMPT"},400,origin);
+  const {data:submitted}=await db.from("physics9_ff_attempts_v1")
+   .select("id,state").eq("id",p.attempt_id).maybeSingle();
+  if(!submitted||submitted.state!=="submitted")return json({error:"SUBMISSION_REQUIRED"},403,origin);
+  const {data:proof,error}=await db.from("physics9_ff_evidence_v1")
+   .select("object_path,original_name").eq("attempt_id",p.attempt_id).maybeSingle();
+  if(error||!proof)return json({error:"EVIDENCE_NOT_FOUND"},404,origin);
+  const {data:link,error:signError}=await db.storage.from(EVIDENCE_BUCKET).createSignedUrl(
+   proof.object_path,90,{download:proof.original_name}
+  );
+  if(signError||!link?.signedUrl)throw Error("SIGNING_FAILED");
+  await record("procedure_evidence_accessed","teacher",p.attempt_id,{teacher_id:userId});
+  return json({url:link.signedUrl,expires_in_seconds:90,filename:proof.original_name},200,origin);
  }
  if(action==="admin_review"){
   if(!validUuid(p.attempt_id)||numeric(p.final_score)===null||p.final_score<0||p.final_score>5||typeof p.comment!=="string"||p.comment.trim().length<10||p.comment.length>2000)return json({error:"REVIEW_INVALID"},400,origin);
   const {data:a}=await db.from("physics9_ff_attempts_v1").select("id,revision,state,final_score").eq("id",p.attempt_id).maybeSingle();
   if(!a||a.state!=="submitted")return json({error:"SUBMISSION_REQUIRED"},409,origin);
+  const {data:reviewEvidence}=await db.from("physics9_ff_evidence_v1").select("attempt_id").eq("attempt_id",a.id).maybeSingle();
+  if(!reviewEvidence)return json({error:"EVIDENCE_REQUIRED"},422,origin);
   const now=new Date().toISOString();
   const {data,error}=await db.from("physics9_ff_attempts_v1").update({final_score:round2(p.final_score),teacher_feedback:p.comment.trim(),reviewed_at:now,revision:a.revision+1,updated_at:now}).eq("id",a.id).eq("revision",a.revision).eq("state","submitted").select("id").maybeSingle();
   if(error||!data)return json({error:"REVIEW_CONFLICT"},409,origin);
@@ -285,8 +382,10 @@ Deno.serve(async(req:Request)=>{
  if(req.method!=="POST")return json({error:"METHOD_NOT_ALLOWED"},405,origin);
  if(origin&&!TEST_ORIGINS.has(origin))return json({error:"ORIGIN_DENIED"},403,origin);
  if(!SERVICE||!ANON||!URL)return json({error:"SERVER_CONFIG_MISSING"},503,origin);
- if(Number(req.headers.get("content-length")||0)>25000)return json({error:"PAYLOAD_TOO_LARGE"},413,origin);
  try{
+  if((req.headers.get("content-type")||"").startsWith("multipart/form-data"))
+   return await uploadEvidence(req,origin);
+  if(Number(req.headers.get("content-length")||0)>25000)return json({error:"PAYLOAD_TOO_LARGE"},413,origin);
   if(!(req.headers.get("content-type")||"").includes("application/json"))return json({error:"CONTENT_TYPE_REQUIRED"},415,origin);
   const raw=await req.text();
   if(raw.length>25000)return json({error:"PAYLOAD_TOO_LARGE"},413,origin);

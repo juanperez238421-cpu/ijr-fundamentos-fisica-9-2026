@@ -22,11 +22,11 @@
     <div class="intro">
      <span class="eyebrow"><i></i> CINEMÁTICA · MOVIMIENTO VERTICAL</span>
      <h1>La gravedad no cambia.<br><em>Tu razonamiento importa.</em></h1>
-     <p class="lead">Evaluación individual de <strong>caída libre y lanzamiento vertical</strong>. Resuelve tres situaciones reales, justifica tus ecuaciones y registra resultados con precisión y unidades.</p>
+     <p class="lead">Evaluación individual de <strong>caída libre y lanzamiento vertical</strong>. Resuelve tres situaciones reales, registra cada respuesta numérica y selecciona su unidad. Adjunta un PDF o fotografía de tu procedimiento para revisión del docente.</p>
      <div class="feature-strip">
       <div><strong>03</strong><span>problemas</span></div><div><strong>09</strong><span>valores numéricos</span></div><div><strong>g = 32</strong><span>ft/s²</span></div>
      </div>
-     <div class="explainer"><strong>Before you begin</strong><p>Use the upward direction as positive: <b>y(t) = y₀ + v₀t − ½gt²</b>. Heights are measured from the ground. A downward velocity is negative. You may enter decimals with a comma or a period. No automatic penalty for changing tabs.</p></div>
+     <div class="explainer"><strong>Before you begin</strong><p>Use the upward direction as positive: <b>y(t) = y₀ + v₀t − ½gt²</b>. Heights are measured from the ground. A downward velocity is negative. Select the appropriate units for each answer, and upload one PDF or photo showing your calculations for all three problems. Equivalent units are accepted if correctly converted. No automatic penalty for changing tabs.</p></div>
      <form id="startForm" class="gate" autocomplete="off">
       <label for="inviteCode">Código individual entregado por el docente</label>
       <div class="input-row"><input id="inviteCode" type="text" required maxlength="35" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX" spellcheck="false" autocapitalize="characters" aria-describedby="startHint"><button type="submit" class="primary" id="startBtn">Comenzar <span aria-hidden="true">→</span></button></div>
@@ -63,12 +63,18 @@
        <h2 id="problemTitle"></h2><p id="problemStatement" class="statement"></p>
        <div id="diagram" class="diagram" role="group" aria-label="Ilustración física del ejercicio"></div>
        <div class="diagram-foot"><span>VECTOR DIAGRAM / SCHEMATIC</span><span>NOT TO SCALE</span></div>
-       <h3>1. Numerical answers</h3>
+       <h3>Respuestas numéricas y unidades</h3>
+       <p class="hint">Registra únicamente el valor y selecciona su unidad en cada resultado. Se aceptan unidades equivalentes cuando el valor esté convertido correctamente. El procedimiento se adjunta en un archivo al final.</p>
        <div id="answerFields" class="answer-fields"></div>
-       <h3>2. Explain your work</h3>
-       <label for="reasoning" class="sr-only">Procedimiento, ecuaciones y justificación</label><textarea id="reasoning" maxlength="4000" rows="6" placeholder="Write the equation, substitute values, solve, and interpret the sign and unit of each result."></textarea>
-       <p class="hint">Explica los tres resultados de este ejercicio. Para entregar se requieren al menos 20 caracteres de procedimiento.</p>
       </article>
+      <div class="evidence-card" aria-labelledby="evidenceTitle">
+       <div class="evidence-header"><span class="evidence-icon" aria-hidden="true">↥</span><div><p class="eyebrow">DOCUMENTO PARA REVISIÓN DOCENTE</p><h2 id="evidenceTitle">Adjunta tu procedimiento</h2></div></div>
+       <p>Sube <strong>un único archivo</strong> que muestre la solución completa de los tres problemas: PDF o fotografía JPG, PNG o WEBP, máximo <strong>5 MB</strong>. Puede ser un PDF de varias páginas. Procura que ecuaciones y operaciones sean legibles.</p>
+       <label for="evidenceFile" class="evidence-label">Seleccionar archivo o imagen</label>
+       <input id="evidenceFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp">
+       <div class="evidence-actions"><button type="button" class="primary" id="uploadEvidenceBtn">Subir procedimiento</button><p class="hint">Al reemplazar el archivo se registra una nueva evidencia en la auditoría. No se admiten cambios después de la entrega.</p></div>
+       <p id="evidenceStatus" class="upload-status" role="status" aria-live="polite">Todavía no has subido el procedimiento.</p>
+      </div>
       <div class="controls"><button type="button" class="secondary" id="previousBtn">← Anterior</button><p id="saveMsg" role="status"></p><button type="button" class="secondary" id="saveBtn">Guardar respuestas</button><button type="button" class="primary" id="nextBtn">Siguiente →</button></div>
       <button type="button" class="submit" id="submitBtn">Enviar evaluación definitiva</button><p id="submitMsg" class="alert" role="status"></p>
      </div>
@@ -79,7 +85,7 @@
      <div class="modal-surface" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmDescription">
        <p class="eyebrow">CONFIRMACIÓN DEFINITIVA</p>
        <h2 id="confirmTitle">¿Enviar tu evaluación?</h2>
-       <p id="confirmDescription">Se registrarán tus tres procedimientos y nueve respuestas numéricas. Después de enviar no podrás editarlas.</p>
+       <p id="confirmDescription">Se registrarán nueve respuestas numéricas con sus unidades y el archivo privado de procedimiento. Después de enviar no podrás modificar las respuestas ni reemplazar el archivo.</p>
        <div class="modal-actions">
          <button id="cancelSubmission" type="button" class="secondary">Seguir revisando</button>
          <button id="confirmSubmission" type="button" class="primary">Confirmar entrega definitiva</button>
@@ -113,7 +119,7 @@
       <p class="alert" id="settingsMsg" role="status"></p>
      </div>
      <div id="teacherStudents" class="admin-panel hidden"><h2>Generar códigos individuales</h2><p>Escribe un alumno por línea en formato <code>Nombre y apellido | 9A</code>. Los códigos de alta entropía se muestran una sola vez; entrégalos por canal privado.</p><textarea id="studentBatch" rows="6" placeholder="Estudiante Ejemplo | 9A"></textarea><button class="primary" id="issueBtn" type="button">Generar códigos</button><div class="code-output" id="codesOut" aria-live="polite"></div><h3>Estudiantes registrados</h3><div id="roster" class="table-scroll"></div></div>
-     <div id="teacherResults" class="admin-panel hidden"><h2>Entregas y calificaciones</h2><p>La nota automática (/5) considera exclusivamente 9 resultados numéricos. La explicación debe revisarse antes de cerrar una calificación.</p><button class="secondary" id="refreshResults" type="button">Actualizar</button><div id="resultsTable" class="table-scroll"></div><div id="reviewPane"></div></div>
+     <div id="teacherResults" class="admin-panel hidden"><h2>Entregas y calificaciones</h2><p>La calificación automática (/5) comprueba 9 valores numéricos y sus unidades. El procedimiento se abre mediante un enlace privado temporal para revisión manual antes de asignar la nota definitiva.</p><button class="secondary" id="refreshResults" type="button">Actualizar</button><div id="resultsTable" class="table-scroll"></div><div id="reviewPane"></div></div>
      <div id="teacherAudit" class="admin-panel hidden"><h2>Bitácora de eventos</h2><button class="secondary" id="refreshAudit" type="button">Actualizar bitácora</button><div id="auditData" class="table-scroll"></div></div>
     </div>
    </section>

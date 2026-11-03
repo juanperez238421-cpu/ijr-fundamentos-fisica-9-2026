@@ -18,7 +18,8 @@ const acceptable=(actual,expected,abs,rel=.005)=>Math.abs(actual-expected)<=epsi
 test("all 3 situations, 9 metrics and diagrams exist",()=>{
  assert.deepEqual(Object.keys({1:["impact_time","height_observation","velocity_observation"],2:["peak_time","max_height","impact_time"],3:["height_observation","impact_time","impact_velocity"]}).length,3);
  assert.match(js,/diagramSvg\(q\)/);assert.match(js,/student\.|student_name/);
- assert.match(html,/id="answerFields"/);assert.match(html,/id="reasoning"/);
+ assert.match(html,/id="answerFields"/);assert.match(html,/id="evidenceFile"/);
+ assert.doesNotMatch(html,/<textarea id="reasoning"/);
  assert.match(css,/@media\(max-width:790px\)/);
 });
 test("scientific correctness: dropped body",()=>{
@@ -68,4 +69,48 @@ test("submit confirmation is in page and not browser-native",()=>{
  assert.match(js,/confirmSubmission/);
  assert.doesNotMatch(js,/if\(!confirm\("¿Confirmas la entrega definitiva/);
  assert.match(css,/\.modal-layer/);
+});
+
+test("unit selection and upload evidence are student-controlled, not typed reasoning",()=>{
+ assert.match(js,/UNIT_CHOICES/);
+ assert.match(js,/selector\.value=one\.units/);
+ assert.match(js,/return \{values,units\}/);
+ assert.doesNotMatch(js,/getElementById\("reasoning"\)/);
+ assert.match(html,/type="file"/);
+ assert.match(html,/accept="\.pdf/);
+ assert.match(html,/id="uploadEvidenceBtn"/);
+ assert.match(api,/if\(!evidence\)return json\(\{error:"EVIDENCE_REQUIRED"\}/);
+ assert.match(api,/validAnswerUnit\(one\.units\?\.\[key\]\)/);
+});
+test("equivalent physical units convert properly and mismatched dimensions are rejected",()=>{
+ const toBase=(v,u)=>u==="min"?v*60:(u==="m"||u==="m/s")?v/0.3048:v;
+ assert.equal(toBase(2,"min"),120);
+ assert.ok(Math.abs(toBase(304.8,"m")-1000)<1e-8);
+ assert.ok(Math.abs(toBase(9.7536,"m/s")-32)<1e-8);
+ assert.match(api,/function permittedUnit\(field:string,unit:string\)/);
+ assert.match(api,/const pass=unit_correct&&numeric_correct/);
+ assert.match(api,/submitted_unit:unit/);
+ assert.match(api,/expected_unit:/);
+});
+test("server-only file upload checks size, signature, student token and submission deadline",()=>{
+ assert.match(api,/function detectMime\(bytes:Uint8Array\)/);
+ assert.match(api,/application\/pdf/);
+ assert.match(api,/image\/jpeg/);
+ assert.match(api,/image\/png/);
+ assert.match(api,/image\/webp/);
+ assert.match(api,/rawFile\.size>EVIDENCE_MAX_BYTES/);
+ assert.match(api,/const a=await asStudent\(p\),s=await settings\(\)/);
+ assert.match(api,/Date\.now\(\)>=Date\.parse\(a\.deadline_at\)/);
+ assert.match(api,/uploadEvidence\(req,origin\)/);
+ assert.match(api,/EVIDENCE_STORAGE_FAILED/);
+ assert.match(api,/\.createSignedUrl\(/);
+ assert.match(api,/teacherIdentity\(req\)/);
+ assert.match(api,/record\("procedure_evidence_uploaded"/);
+});
+test("no reasoning text is automatically graded; teacher reviews private file",()=>{
+ assert.doesNotMatch(api,/reasoning\.trim\(\)\.length/);
+ assert.match(js,/admin_evidence_link/);
+ assert.match(js,/SHA-256/);
+ assert.match(js,/Archivo de procedimiento/);
+ assert.match(js,/EVIDENCE_REQUIRED/);
 });
