@@ -1,43 +1,43 @@
-# Free Fall Lab — Física 9.º · Evaluación individual 2026-2
+# Free Fall Lab — Física 9.º (v3, 2026)
 
-Ruta pública prevista: https://juanperez238421-cpu.github.io/ijr-fundamentos-fisica-9-2026/evaluaciones/caida-libre/
+Página: https://juanperez238421-cpu.github.io/ijr-fundamentos-fisica-9-2026/evaluaciones/caida-libre/
 
-## Modelo
-Los tres problemas cubren: (1) caída desde reposo, (2) lanzamiento hacia arriba y altura máxima, (3) lanzamiento hacia abajo y velocidad de impacto. Cada uno tiene tres campos numéricos y un selector obligatorio de unidades físicas. El procedimiento no se escribe en la página: se adjunta como **un PDF o una imagen privada** de hasta 5 MB que contenga las operaciones de los tres problemas. Se asignan 3 variantes por problema; cada alumno recibe un paquete aleatorio. Convención: arriba positivo; g = 32 ft/s².
+## Registro exclusivo con correo institucional
 
-y(t) = h0 + v0*t - 0.5*g*t²
-v(t) = v0 - g*t
-t_impact = (v0 + sqrt(v0²+2*g*h0))/g
-t_peak = v0/g
-y_max = h0 + v0²/(2*g)
+Cualquier persona que controle un buzón real con terminación EXACTA @ijr.edu.co puede solicitar su ingreso sin contraseña del examen ni código individual entregado por docente. El estudiante debe comprobar posesión del correo por enlace mágico u OTP de Supabase Auth. El backend valida el JWT con auth.getUser, la dirección email_confirmed_at/confirmed_at y el dominio exacto; no confía en el correo escrito ni en los metadatos editables. Existe un único intento por dirección verificada, protegido con índices únicos.
 
-El servidor calcula la solución, no el navegador. Acepta |respuesta - exacto| <= max(tolerancia absoluta por unidad, tolerancia relativa × |exacto|).
-Valores iniciales: 0.12 s, 2 ft, 1.5 ft/s y tolerancia relativa 0.5 %. Nota automática = 5 × aciertos / 9 (provisional). La nota final requiere revisión manual del archivo de procedimiento y decisión docente documentada.
+La sesión se conserva para recuperar borradores y entregar al regresar. El docente conserva acceso con cuenta teacher/admin y MFA nivel aal2. La lista docente de Participantes muestra los emails autenticados; NO hay invitaciones.
 
-## Docente
-1. Abrir Acceso docente, autenticar con cuenta real Supabase Auth con rol teacher/admin y MFA TOTP nivel aal2. No se publica ni se crea ninguna contraseña docente.
-2. En Invitaciones, emitir códigos por alumno con Nombre | 9A (o 9B/9C). Cada código es aleatorio de 120 bits, visible una vez. Entregar individualmente por canal privado.
-3. En Configuración, definir fechas, duración y tolerancias; habilitar la evaluación solamente al realizar pruebas. Inicialmente enabled=false.
-4. En Resultados, comparar el valor normalizado, la tolerancia, la unidad elegida y la respuesta; abrir el archivo privado mediante un enlace de descarga de 90 segundos y registrar nota final y justificación.
-5. En Auditoría, verificar guardados, entregas y revisiones.
+## Requisitos externos de Supabase Auth para acceso real
 
-## Seguridad
-El código identifica posesión, no SSO institucional: el docente debe distribuir códigos y contrastar identidad. Hash SHA-256 de código, sesión aleatoria con rotación, un intento por invitación. RLS habilitada en todas las tablas privadas, sin permisos directos para roles de navegador. Edge Function actúa con service role solo en servidor. MFA aal2 y rol de perfiles validados para administración. El tiempo de entrega lo impone el servidor. Los eventos son append-only en la API y las operaciones del intento generan eventos atómicos con trigger. Un administrador total de DB puede alterar la información, por lo que no se afirma inmutabilidad criptográfica absoluta. No se vigilan pestañas ni cámara. El estudiante elige la unidad para cada resultado (s/min, ft/m, ft/s/m/s según dimensión); el backend acepta conversiones físicamente equivalentes y rechaza unidades dimensionalmente incorrectas. Se admite exclusivamente **PDF, JPEG, PNG o WEBP** y la firma binaria debe coincidir con el MIME declarado. El archivo se almacena en el bucket privado physics9-freefall-procedures, con metadatos SHA-256 y acceso docente exclusivamente bajo Auth+MFA. El servidor exige un archivo antes de aceptar la entrega; una vez enviada, el archivo y las respuestas no se pueden reemplazar. No se publican soluciones exactas en la aplicación.
+El proveedor Email y la creación de cuentas deben estar habilitados para permitir ingreso espontáneo de buzones institucionales. En Auth → URL Configuration → Redirect URLs incluir:
+https://juanperez238421-cpu.github.io/ijr-fundamentos-fisica-9-2026/evaluaciones/caida-libre/
 
-## QA previo a estudiantes
-- Comprobar que no se inicia cuando enabled=false.
-- Autenticación de profesor sin MFA: acceso denegado.
-- Código falso: rechazo; código revocado: rechazo.
-- Emitir código QA sintético, probar 9 resultados con unidades correctas/incorrectas, equivalencias SI/imperial, signos negativos, redondeo dentro/fuera de tolerancia, recibo y nota provisional privada.
-- Confirmar que no se puede entregar sin archivo. Subir PDF/JPEG/PNG/WEBP real menor que 5 MB, verificar estado y SHA, entrega; intentar archivo malicioso, corrupto, demasiado grande y posterior a la entrega.
-- Abrir el archivo desde consola docente MFA con enlace temporal (90 s), validar legibilidad y registrar nota definitiva con revisión manual.
-- Recargar con sesión abierta: recuperar borradores. Reutilizar mismo código: no se crea otro intento.
-- Confirmar cierre por fecha/hora, RLS y bitácora.
-- Revocar QA después.
+La plantilla de correo estándar de Supabase usa enlace mágico. Para mostrar además un código OTP se debe incluir la variable Token de Auth (dos llaves, espacio, punto Token, espacio, dos llaves) en la plantilla de Magic Link; la página acepta ambas alternativas, no presupone que el código aparezca por defecto.
 
-Frontend: index.html, styles.css, app.js.
-Backend: supabase/functions/physics9-freefall-exam/index.ts.
-Migrations: supabase/migrations/20261103_physics9_freefall_exam.sql y 20261103_physics9_freefall_audit.sql.
+Confirmar que Supabase Auth puede realmente enviar a todos los usuarios del dominio. Para grupos numerosos, usar SMTP configurado para la institución y revisar límites. Cambios en templates y SMTP son globales al proyecto compartido y deben coordinarse para no afectar otras aplicaciones.
 
-## Privacidad
-No uses nombres ni datos personales en commits ni reportes públicos. El archivo contiene información de alumnos: únicamente docente con MFA puede generar la descarga. Conservar y borrar según la política institucional de retención. El sistema no verifica autoría del procedimiento ni previene intercambio de códigos.
+## Correo de prueba propuesto
+
+qa.caidalibre.2026@ijr.edu.co
+
+Solo es un identificador sintético de prueba registrado en QA documental. NO es un buzón creado en Google Workspace / Microsoft 365 ni una identidad verificada en Supabase Auth. Para probar la recepción y entrada real, TI del colegio debe habilitar este buzón/alias con acceso verificable. NO dar de alta un correo ficticio como confirmado a la fuerza ni distribuir credenciales inexistentes.
+
+## Evaluación y procedimiento
+
+Tres ejercicios, nueve respuestas numéricas; selector de unidades en cada campo. El motor acepta equivalencias s/min, ft/m y ft/s/m/s con conversión física y rechaza dimensiones incorrectas. Convención arriba positivo, g=32 ft/s². El servidor calcula la nota provisional automática de 0 a 5 y las tolerancias por categoría de variable.
+
+El estudiante adjunta UN PDF/JPG/PNG/WEBP privado de hasta 5 MiB con todas las operaciones, sin teclear procedimientos. El archivo contiene SHA-256; no se permite entregar sin evidencia ni modificarla al finalizar. El profesor, autenticado con MFA, puede revisar el archivo mediante enlace temporal de 90 segundos y establecer nota definitiva con comentario auditado.
+
+## Seguridad, operación y QA
+
+- RLS activo, navegador sin acceso directo a las tablas o al bucket privado; service_role exclusivamente en Edge Function.
+- JWT Auth.getUser en TODA acción estudiantil, incluso upload multipart. El código antiguo y las rutas administrativas de emisión/revocación de invitaciones han sido retirados.
+- Migración de esquema no destructiva: preserva intentos antiguos y evita colisiones por email en intentos nuevos.
+- Registro de cambios auditable y sello temporal del servidor. Reutilización del mismo email verificado recupera el mismo intento.
+- La identidad por email confirma dominio y posesión del buzón, NO matrícula específica de grado 9 ni autoría del procedimiento.
+- Cerrar sesión al terminar en equipos compartidos.
+- Antes del aula, validar entrada real con buzón @ijr.edu.co existente, mensaje recibido, vinculación correcta, archivo PDF/imagen, comprobación docente con MFA, redondeos y cierre de evaluación.
+- La evaluación permanece deshabilitada hasta que se confirme funcionamiento de email/SMTP y QA E2E con buzón real.
+
+Fecha: 2026-11-03.
