@@ -5,8 +5,8 @@
  <meta name="theme-color" content="#f6f8fa">
  <meta name="description" content="Evaluación individual auditable de caída libre para Física 9° · Instituto Jorge Robledo">
  <title>Free Fall Lab · Evaluación de Física 9.º · IJR</title>
- <link rel="stylesheet" href="./styles.css?v=email-v3-20261103">
- <script type="module" src="./app.js?v=email-v3-20261103"></script>
+ <link rel="stylesheet" href="./styles.css?v=email-direct-v4">
+ <script type="module" src="./app.js?v=email-direct-v4"></script>
 </head>
 <body>
  <div class="shell">
@@ -29,25 +29,10 @@
      <div class="explainer"><strong>Before you begin</strong><p>Use the upward direction as positive: <b>y(t) = y₀ + v₀t − ½gt²</b>. Heights are measured from the ground. A downward velocity is negative. Select the appropriate units for each answer, and upload one PDF or photo showing your calculations for all three problems. Equivalent units are accepted if correctly converted. No automatic penalty for changing tabs.</p></div>
      <form id="startForm" class="gate" autocomplete="on">
       <label for="studentEmail">Correo institucional</label>
-      <div class="input-row"><input id="studentEmail" type="email" inputmode="email" autocomplete="email" spellcheck="false" maxlength="160" required placeholder="estudiante@ijr.edu.co" aria-describedby="startHint"><button type="submit" class="primary" id="startBtn">Enviar acceso <span aria-hidden="true">→</span></button></div>
-      <p id="startHint" class="hint">Acceso abierto a cualquier persona que controle un buzón <strong>@ijr.edu.co</strong>. No necesitas contraseña, código asignado por docente ni inscripción previa. Un único intento por correo verificado.</p>
+      <div class="input-row"><input id="studentEmail" type="email" inputmode="email" autocomplete="email" spellcheck="false" maxlength="160" required placeholder="estudiante@ijr.edu.co" aria-describedby="startHint"><button type="submit" class="primary" id="startBtn">Ingresar <span aria-hidden="true">→</span></button></div>
+      <p id="startHint" class="hint">Ingresa directamente con una dirección <strong>@ijr.edu.co</strong>. Sin contraseñas, códigos de verificación ni mensajes al correo. Un solo intento por dirección. Para proteger tus respuestas, continúa en este mismo navegador y pestaña hasta entregar.</p>
       <p id="startMsg" class="alert" role="status" aria-live="polite"></p>
      </form>
-     <div id="otpPanel" class="email-otp hidden">
-      <h2>Comprueba tu correo institucional</h2>
-      <p>Revisa tu bandeja y el correo no deseado. Introduce el código de seis dígitos si el mensaje lo contiene; si recibes un enlace de acceso, ábrelo en este navegador.</p>
-      <form id="verifyForm" class="gate">
-       <label for="emailOtp">Código recibido por correo (si está disponible)</label>
-       <div class="input-row"><input id="emailOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]{6,8}" placeholder="000000"><button type="submit" class="primary" id="verifyBtn">Verificar correo</button></div>
-      </form>
-      <p id="verifyMsg" class="alert" role="status" aria-live="polite"></p>
-      <button id="changeEmailBtn" type="button" class="quiet">Cambiar correo</button>
-     </div>
-     <div id="verifiedPanel" class="email-verified hidden">
-      <p><strong>Correo verificado:</strong> <span id="verifiedStudentEmail"></span></p>
-      <div class="input-row"><button type="button" id="continueBtn" class="primary">Entrar a la evaluación <span aria-hidden="true">→</span></button><button type="button" id="studentLogoutBtn" class="secondary">Cerrar sesión</button></div>
-      <p id="verifiedMsg" class="alert" role="status" aria-live="polite"></p>
-     </div>
     </div>
     <div class="hero-visual">
      <div class="visual-overline"><span>FREE FALL / VECTOR FIELD</span><span>PHYSICS · 09</span></div>
@@ -69,7 +54,7 @@
     </div>
    </section>
    <section id="exam" class="hidden" aria-label="Cuestionario de caída libre">
-    <div class="exam-head"><div><p class="eyebrow">EVALUACIÓN EN CURSO</p><h1>Free Fall <em>Assessment.</em></h1><p id="studentLabel" class="muted"></p></div><div class="exam-summary"><div><span>TIEMPO RESTANTE</span><strong id="clock" aria-live="off">--:--</strong></div><div><span>GUARDADOS</span><strong id="countSaved">0 / 3</strong></div></div></div>
+    <div class="exam-head"><div><p class="eyebrow">EVALUACIÓN EN CURSO</p><h1>Free Fall <em>Assessment.</em></h1><p id="studentLabel" class="muted"></p><button id="guestLogout" type="button" class="quiet">Salir y cerrar sesión</button></div><div class="exam-summary"><div><span>TIEMPO RESTANTE</span><strong id="clock" aria-live="off">--:--</strong></div><div><span>GUARDADOS</span><strong id="countSaved">0 / 3</strong></div></div></div>
     <div class="exam-grid">
      <nav class="steps" aria-label="Problemas"><strong>YOUR EXAM</strong><p>Selecciona un problema.</p><div id="stepButtons"></div><div class="side-instruction"><strong>Convención de signos</strong><p>Arriba (+) · Abajo (−)</p><p>Las velocidades solicitadas requieren signo. Introduce solo el número; la unidad está indicada.</p></div></nav>
      <div class="problem-col">
@@ -133,7 +118,7 @@
       <label class="checkline"><input id="showScore" type="checkbox"> Mostrar la nota final únicamente después de revisión docente</label><button class="primary" type="submit">Guardar configuración</button></form>
       <p class="alert" id="settingsMsg" role="status"></p>
      </div>
-     <div id="teacherStudents" class="admin-panel hidden"><h2>Participantes por correo institucional</h2><p>La lista se actualiza cuando alguien verificado con <strong>@ijr.edu.co</strong> inicia su evaluación. No se crean invitaciones ni códigos. Cada buzón puede registrar un solo intento.</p><div id="roster" class="table-scroll"></div></div>
+     <div id="teacherStudents" class="admin-panel hidden"><h2>Participantes por correo institucional</h2><p>La lista se actualiza cuando alguien registra una dirección declarada con <strong>@ijr.edu.co</strong> e inicia la evaluación. Este registro no verifica la titularidad del correo. No se crean invitaciones ni códigos. Cada buzón puede registrar un solo intento.</p><div id="roster" class="table-scroll"></div></div>
      <div id="teacherResults" class="admin-panel hidden"><h2>Entregas y calificaciones</h2><p>La calificación automática (/5) comprueba 9 valores numéricos y sus unidades. El procedimiento se abre mediante un enlace privado temporal para revisión manual antes de asignar la nota definitiva.</p><button class="secondary" id="refreshResults" type="button">Actualizar</button><div id="resultsTable" class="table-scroll"></div><div id="reviewPane"></div></div>
      <div id="teacherAudit" class="admin-panel hidden"><h2>Bitácora de eventos</h2><button class="secondary" id="refreshAudit" type="button">Actualizar bitácora</button><div id="auditData" class="table-scroll"></div></div>
     </div>
