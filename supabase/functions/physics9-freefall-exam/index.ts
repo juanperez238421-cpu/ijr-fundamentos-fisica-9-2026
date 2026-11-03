@@ -20,17 +20,11 @@ const json = (data:unknown,status=200,origin:string|null=null) => new Response(J
 const sha = async (s:string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",enc.encode(s))),b=>b.toString(16).padStart(2,"0")).join("");
 const randHex = (bytes=32) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)),b=>b.toString(16).padStart(2,"0")).join("");
 const SCHOOL_EMAIL_RE=/^[a-z0-9][a-z0-9._%+-]*@ijr[.]edu[.]co$/;
-type StudentIdentity={id:string;email:string};
-async function studentIdentity(req:Request):Promise<StudentIdentity|null> {
- const authorization=req.headers.get("authorization")||"";
- if(!/^Bearer\s+[a-zA-Z0-9._-]+$/.test(authorization))return null;
- const token=authorization.replace(/^Bearer\s+/,"");
- const userClient=createClient(URL,ANON,{auth:{persistSession:false,autoRefreshToken:false}});
- const {data,error}=await userClient.auth.getUser(token);
- const user=data?.user,email=String(user?.email||"").trim().toLowerCase();
- if(error||!user?.id||!SCHOOL_EMAIL_RE.test(email))return null;
- if(!user.email_confirmed_at)return null;
- return{id:user.id,email};
+const validGuestSession=(x:unknown):x is string=>typeof x==="string"&&/^[0-9a-f]{64}$/.test(x);
+function normalizedEmail(x:unknown):string|null {
+ if(typeof x!=="string"||x.length>160)return null;
+ const email=x.trim().toLowerCase();
+ return SCHOOL_EMAIL_RE.test(email)?email:null;
 }
 const validUuid=(x:unknown)=>typeof x==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
 const nstr=(x:unknown)=>typeof x==="string"&&x.length<=40&&/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(x.trim())&&Number.isFinite(Number(x.replace(",",".")))?Number(x.replace(",",".")):null;
@@ -97,14 +91,15 @@ async function questions(ids:string[]):Promise<Row[]>{
  if(error||!data||data.length!==3)throw Error("QUESTIONS_UNAVAILABLE");
  return ids.map(id=>{const q=data.find(x=>x.id===id);if(!q)throw Error("VARIANT_MISSING");return q;});
 }
-async function asStudent(req:Request):Promise<Row|null>{
- const identity=await studentIdentity(req);
- if(!identity)return null;
+async function asStudent(p:Row):Promise<Row|null>{
+ if(!validUuid(p.attempt_id)||!validGuestSession(p.session_token))return null;
+ const sessionHash=await sha(p.session_token);
  const {data,error}=await db.from("physics9_ff_attempts_v1").select("*")
-  .eq("auth_user_id",identity.id).eq("institutional_email",identity.email).maybeSingle();
+  .eq("id",p.attempt_id).eq("session_hash",sessionHash)
+  .is("auth_user_id",null).is("invite_id",null).maybeSingle();
  if(error)throw Error("ATTEMPT_LOOKUP_FAILED");
- if(!data)return null;
- return {...data,student_name:identity.email,group_code:"Institucional"};
+ if(!data||!normalizedEmail(data.institutional_email))return null;
+ return {...data,student_name:data.institutional_email,group_code:"Institucional · correo declarado"};
 }
 async function studentView(a:Row,s:Row,session:string|null=null){
  const qs=await questions(a.variant_ids);
@@ -137,32 +132,38 @@ async function record(type:string,actor:string,attemptId:string|null,detail:Row=
 }
 async function handleStudent(p:Row,req:Request,origin:string|null){
  const action=p.action,s=await settings();
- if(action==="config")return json({enabled:s.enabled,open:isOpen(s),opens_at:s.opens_at,closes_at:s.closes_at,duration_minutes:s.duration_minutes,question_count:3,auth_mode:"institutional_email"},200,origin);
+ if(action==="config")return json({enabled:s.enabled,open:isOpen(s),opens_at:s.opens_at,closes_at:s.closes_at,duration_minutes:s.duration_minutes,question_count:3,auth_mode:"declared_institutional_email_no_verification"},200,origin);
  if(action==="start"){
-  const identity=await studentIdentity(req);
-  if(!identity)return json({error:"INSTITUTIONAL_EMAIL_REQUIRED"},401,origin);
+  const email=normalizedEmail(p.email);
+  if(!email)return json({error:"INVALID_INSTITUTIONAL_EMAIL"},400,origin);
+  // Never give access to a pre-existing record on the strength of its address alone.
+  // A high-entropy secret from THIS browser is required to resume and view answers.
   const {data:old,error:readError}=await db.from("physics9_ff_attempts_v1")
-   .select("*").eq("institutional_email",identity.email).maybeSingle();
+   .select("*").eq("institutional_email",email).maybeSingle();
   if(readError)throw Error("ATTEMPT_LOOKUP_FAILED");
   if(old){
-   if(old.auth_user_id!==identity.id)
-    return json({error:"IDENTITY_CONFLICT_CONTACT_TEACHER"},403,origin);
-   return json(await studentView({...old,student_name:identity.email,group_code:"Institucional"},s),200,origin);
+   const resumed=await asStudent(p);
+   if(!resumed||resumed.id!==old.id)
+    return json({error:"EMAIL_ALREADY_REGISTERED_DIFFERENT_SESSION"},409,origin);
+   return json(await studentView(resumed,s),200,origin);
   }
   if(!isOpen(s))return json({error:"EXAM_NOT_OPEN"},403,origin);
   const variant_ids=[1,2,3].map(n=>"P"+n+"V"+(crypto.getRandomValues(new Uint8Array(1))[0]%3+1));
   const now=Date.now(),limit=now+Number(s.duration_minutes)*60000,close=s.closes_at?Date.parse(s.closes_at):Infinity;
+  const token=randHex(32);
   const {data,error}=await db.from("physics9_ff_attempts_v1").insert({
-   invite_id:null,auth_user_id:identity.id,institutional_email:identity.email,
-   variant_ids,session_hash:await sha(crypto.randomUUID()),
+   invite_id:null,auth_user_id:null,institutional_email:email,
+   variant_ids,session_hash:await sha(token),
    deadline_at:new Date(Math.min(limit,close)).toISOString()
   }).select("*").maybeSingle();
   if(error||!data)return json({error:"START_CONFLICT_RETRY"},409,origin);
-  await record("session_started","student",data.id,{auth_user_id:identity.id,identity_provider:"verified_school_email"});
-  return json(await studentView({...data,student_name:identity.email,group_code:"Institucional"},s),200,origin);
+  await record("session_started","student",data.id,{
+    declared_email:email,auth_mode:"unverified_email",verification_performed:false
+  });
+  return json(await studentView({...data,student_name:email,group_code:"Institucional · correo declarado"},s,token),200,origin);
  }
- const a=await asStudent(req);
- if(!a)return json({error:"INSTITUTIONAL_EMAIL_REQUIRED"},401,origin);
+ const a=await asStudent(p);
+ if(!a)return json({error:"INVALID_SESSION"},401,origin);
  if(action==="status")return json(await studentView(a,s),200,origin);
  if(a.state!=="active")return json({error:"ALREADY_SUBMITTED"},409,origin);
  if(!isOpen(s)||Date.now()>=Date.parse(a.deadline_at))return json({error:"DEADLINE_REACHED"},403,origin);
@@ -236,7 +237,7 @@ async function uploadEvidence(req:Request,origin:string|null):Promise<Response>{
  if(!(rawFile instanceof File))return json({error:"FILE_REQUIRED"},400,origin);
  if(rawFile.size<64||rawFile.size>EVIDENCE_MAX_BYTES)return json({error:"FILE_TOO_LARGE"},413,origin);
  if(rawFile.name.length<1||rawFile.name.length>160)return json({error:"FILE_NAME_INVALID"},400,origin);
- const a=await asStudent(req),s=await settings();
+ const a=await asStudent({attempt_id:form.get("attempt_id"),session_token:form.get("session_token")}),s=await settings();
  if(!a)return json({error:"INVALID_SESSION"},401,origin);
  if(a.state!=="active"||!isOpen(s)||Date.now()>=Date.parse(a.deadline_at))return json({error:"DEADLINE_REACHED"},403,origin);
  const bytes=new Uint8Array(await rawFile.arrayBuffer());
