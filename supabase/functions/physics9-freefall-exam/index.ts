@@ -29,7 +29,7 @@ async function studentIdentity(req:Request):Promise<StudentIdentity|null> {
  const {data,error}=await userClient.auth.getUser(token);
  const user=data?.user,email=String(user?.email||"").trim().toLowerCase();
  if(error||!user?.id||!SCHOOL_EMAIL_RE.test(email))return null;
- if!user.email_confirmed_atreturn null;
+ if(!user.email_confirmed_at)return null;
  return{id:user.id,email};
 }
 const validUuid=(x:unknown)=>typeof x==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
