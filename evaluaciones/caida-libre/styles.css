@@ -33,3 +33,15 @@
 .download-area a{text-decoration:underline;color:#096558;font-weight:700}
 @media(max-width:1050px){.answer-fields{grid-template-columns:1fr}.answer-item label{min-height:unset}}
 @media(max-width:790px){.evidence-card{padding:19px}.with-unit select{flex-basis:90px;width:90px}}
+
+/* Passwordless institutional email sign-in replaces student invitation codes. */
+#studentEmail{text-transform:none;letter-spacing:normal}
+#emailOtp{letter-spacing:.25em;font-size:19px;font-weight:760;text-align:center}
+.email-otp,.email-verified{margin-top:15px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:19px 20px;box-shadow:var(--shadow)}
+.email-otp h2{font-size:20px;margin:0 0 8px}
+.email-otp>p,.email-verified>p{font-size:13px;color:var(--muted)}
+.email-otp .quiet{display:inline-block;margin-top:4px}
+.email-verified strong{color:#205c50}
+.email-verified .input-row{align-items:center;flex-wrap:wrap}
+.email-verified .input-row button{min-height:44px}
+@media(max-width:520px){.email-otp,.email-verified{padding:16px}.email-verified .input-row{flex-direction:column;align-items:stretch}}

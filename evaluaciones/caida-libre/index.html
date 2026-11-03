@@ -27,12 +27,27 @@
       <div><strong>03</strong><span>problemas</span></div><div><strong>09</strong><span>valores numéricos</span></div><div><strong>g = 32</strong><span>ft/s²</span></div>
      </div>
      <div class="explainer"><strong>Before you begin</strong><p>Use the upward direction as positive: <b>y(t) = y₀ + v₀t − ½gt²</b>. Heights are measured from the ground. A downward velocity is negative. Select the appropriate units for each answer, and upload one PDF or photo showing your calculations for all three problems. Equivalent units are accepted if correctly converted. No automatic penalty for changing tabs.</p></div>
-     <form id="startForm" class="gate" autocomplete="off">
-      <label for="inviteCode">Código individual entregado por el docente</label>
-      <div class="input-row"><input id="inviteCode" type="text" required maxlength="35" placeholder="XXXXXX-XXXXXX-XXXXXX-XXXXXX" spellcheck="false" autocapitalize="characters" aria-describedby="startHint"><button type="submit" class="primary" id="startBtn">Comenzar <span aria-hidden="true">→</span></button></div>
-      <p id="startHint" class="hint">Cada código permite un único intento. Tus respuestas se guardan de forma privada.</p>
+     <form id="startForm" class="gate" autocomplete="on">
+      <label for="studentEmail">Correo institucional</label>
+      <div class="input-row"><input id="studentEmail" type="email" inputmode="email" autocomplete="email" spellcheck="false" maxlength="160" required placeholder="estudiante@ijr.edu.co" aria-describedby="startHint"><button type="submit" class="primary" id="startBtn">Enviar acceso <span aria-hidden="true">→</span></button></div>
+      <p id="startHint" class="hint">Acceso abierto a cualquier persona que controle un buzón <strong>@ijr.edu.co</strong>. No necesitas contraseña, código asignado por docente ni inscripción previa. Un único intento por correo verificado.</p>
       <p id="startMsg" class="alert" role="status" aria-live="polite"></p>
      </form>
+     <div id="otpPanel" class="email-otp hidden">
+      <h2>Comprueba tu correo institucional</h2>
+      <p>Revisa tu bandeja y el correo no deseado. Introduce el código de seis dígitos si el mensaje lo contiene; si recibes un enlace de acceso, ábrelo en este navegador.</p>
+      <form id="verifyForm" class="gate">
+       <label for="emailOtp">Código recibido por correo (si está disponible)</label>
+       <div class="input-row"><input id="emailOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]{6,8}" placeholder="000000"><button type="submit" class="primary" id="verifyBtn">Verificar correo</button></div>
+      </form>
+      <p id="verifyMsg" class="alert" role="status" aria-live="polite"></p>
+      <button id="changeEmailBtn" type="button" class="quiet">Cambiar correo</button>
+     </div>
+     <div id="verifiedPanel" class="email-verified hidden">
+      <p><strong>Correo verificado:</strong> <span id="verifiedStudentEmail"></span></p>
+      <div class="input-row"><button type="button" id="continueBtn" class="primary">Entrar a la evaluación <span aria-hidden="true">→</span></button><button type="button" id="studentLogoutBtn" class="secondary">Cerrar sesión</button></div>
+      <p id="verifiedMsg" class="alert" role="status" aria-live="polite"></p>
+     </div>
     </div>
     <div class="hero-visual">
      <div class="visual-overline"><span>FREE FALL / VECTOR FIELD</span><span>PHYSICS · 09</span></div>
@@ -103,7 +118,7 @@
      <p class="alert" id="teacherLoginMsg" role="status"></p>
     </div>
     <div id="teacherConsole" class="hidden">
-     <div class="teacher-tabs"><button id="settingsTab" class="active" type="button">Configuración</button><button id="studentsTab" type="button">Invitaciones</button><button id="resultsTab" type="button">Resultados</button><button id="auditTab" type="button">Auditoría</button><button id="logoutBtn" type="button">Cerrar sesión</button></div>
+     <div class="teacher-tabs"><button id="settingsTab" class="active" type="button">Configuración</button><button id="studentsTab" type="button">Participantes</button><button id="resultsTab" type="button">Resultados</button><button id="auditTab" type="button">Auditoría</button><button id="logoutBtn" type="button">Cerrar sesión</button></div>
      <div id="teacherSettings" class="admin-panel">
       <h2>Parámetros del examen</h2><p>La comparación se hace en el servidor: error máximo = máx(tolerancia absoluta, tolerancia relativa × |valor exacto|).</p>
       <form id="settingsForm"><div class="setting-grid">
@@ -118,7 +133,7 @@
       <label class="checkline"><input id="showScore" type="checkbox"> Mostrar la nota final únicamente después de revisión docente</label><button class="primary" type="submit">Guardar configuración</button></form>
       <p class="alert" id="settingsMsg" role="status"></p>
      </div>
-     <div id="teacherStudents" class="admin-panel hidden"><h2>Generar códigos individuales</h2><p>Escribe un alumno por línea en formato <code>Nombre y apellido | 9A</code>. Los códigos de alta entropía se muestran una sola vez; entrégalos por canal privado.</p><textarea id="studentBatch" rows="6" placeholder="Estudiante Ejemplo | 9A"></textarea><button class="primary" id="issueBtn" type="button">Generar códigos</button><div class="code-output" id="codesOut" aria-live="polite"></div><h3>Estudiantes registrados</h3><div id="roster" class="table-scroll"></div></div>
+     <div id="teacherStudents" class="admin-panel hidden"><h2>Participantes por correo institucional</h2><p>La lista se actualiza cuando alguien verificado con <strong>@ijr.edu.co</strong> inicia su evaluación. No se crean invitaciones ni códigos. Cada buzón puede registrar un solo intento.</p><div id="roster" class="table-scroll"></div></div>
      <div id="teacherResults" class="admin-panel hidden"><h2>Entregas y calificaciones</h2><p>La calificación automática (/5) comprueba 9 valores numéricos y sus unidades. El procedimiento se abre mediante un enlace privado temporal para revisión manual antes de asignar la nota definitiva.</p><button class="secondary" id="refreshResults" type="button">Actualizar</button><div id="resultsTable" class="table-scroll"></div><div id="reviewPane"></div></div>
      <div id="teacherAudit" class="admin-panel hidden"><h2>Bitácora de eventos</h2><button class="secondary" id="refreshAudit" type="button">Actualizar bitácora</button><div id="auditData" class="table-scroll"></div></div>
     </div>

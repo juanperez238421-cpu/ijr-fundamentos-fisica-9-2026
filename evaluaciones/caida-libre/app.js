@@ -2,27 +2,52 @@
 const API="https://rlfxnjbqxbozjdzkbwlz.supabase.co/functions/v1/physics9-freefall-exam";
 const URL="https://rlfxnjbqxbozjdzkbwlz.supabase.co";
 const PUBLIC_KEY="sb_publishable_rmVOQ3Orx49KpW_4uMqYew_c2HpcA87";
-const STORAGE="ijr-physics9-freefall-v1";
+const SCHOOL_EMAIL_RE=/^[a-z0-9][a-z0-9._%+-]*@ijr[.]edu[.]co$/;
+const STUDENT_AUTH_KEY="ijr-physics9-institutional-student-v3";
 const $=id=>document.getElementById(id);
 const UNIT_CHOICES={
  time:["s","min","ft","ft/s"],height:["ft","m","s","ft/s"],velocity:["ft/s","m/s","ft","s"]
 };
 const MEASURE_TYPE={impact_time:"time",peak_time:"time",height_observation:"height",max_height:"height",velocity_observation:"velocity",impact_velocity:"velocity"};
 const fieldsByProblem={1:["impact_time","height_observation","velocity_observation"],2:["peak_time","max_height","impact_time"],3:["height_observation","impact_time","impact_velocity"]};
-const names={EXAM_NOT_OPEN:"La evaluación no está abierta. Consulta al docente.",INVALID_CODE:"Código inválido o revocado.",TEMPORARILY_BLOCKED:"Demasiados intentos. Inténtalo más tarde.",INVALID_SESSION:"Sesión no válida. Ingresa nuevamente tu código.",DEADLINE_REACHED:"Se cumplió el plazo de entrega definido por el servidor.",REVISION_CONFLICT:"La respuesta cambió en otra sesión. Recarga el intento antes de continuar.",INCOMPLETE_ANSWERS:"Faltan valores numéricos o unidades en alguno de los tres problemas.",INVALID_NUMBER:"Ingresa solo números; se admite el signo menos y los decimales.",INVALID_UNITS:"Selecciona una unidad en cada resultado.",EVIDENCE_REQUIRED:"Debes subir un PDF o una imagen con el procedimiento antes de entregar.",FILE_TOO_LARGE:"El archivo excede 5 MB.",UNSUPPORTED_FILE_TYPE:"Solo se admiten archivos PDF, JPG, PNG o WEBP.",FILE_REQUIRED:"Selecciona un PDF o imagen antes de subir.",EVIDENCE_SAVE_FAILED:"No se pudo registrar el archivo. Inténtalo de nuevo.",TEACHER_MFA_REQUIRED:"Debes iniciar sesión con una cuenta docente y MFA habilitado."};
-let current=null,index=0,dirty=false,uploadInProgress=false,supabase=null,teacherResults=[],teacherInfo=null,selectedReview=null;
+const names={EXAM_NOT_OPEN:"La evaluación no está abierta. Consulta al docente.",INSTITUTIONAL_EMAIL_REQUIRED:"Debes verificar un correo válido @ijr.edu.co para entrar.",IDENTITY_CONFLICT_CONTACT_TEACHER:"Esta dirección ya tiene un intento asociado a otra identidad. Contacta al docente.",START_CONFLICT_RETRY:"El intento se está creando. Vuelve a intentarlo.",DEADLINE_REACHED:"Se cumplió el plazo de entrega definido por el servidor.",REVISION_CONFLICT:"La respuesta cambió en otra sesión. Recarga el intento antes de continuar.",INCOMPLETE_ANSWERS:"Faltan valores numéricos o unidades en alguno de los tres problemas.",INVALID_NUMBER:"Ingresa solo números; se admite el signo menos y los decimales.",INVALID_UNITS:"Selecciona una unidad en cada resultado.",EVIDENCE_REQUIRED:"Debes subir un PDF o una imagen con el procedimiento antes de entregar.",FILE_TOO_LARGE:"El archivo excede 5 MB.",UNSUPPORTED_FILE_TYPE:"Solo se admiten archivos PDF, JPG, PNG o WEBP.",FILE_REQUIRED:"Selecciona un PDF o imagen antes de subir.",EVIDENCE_SAVE_FAILED:"No se pudo registrar el archivo. Inténtalo de nuevo.",TEACHER_MFA_REQUIRED:"Debes iniciar sesión con una cuenta docente y MFA habilitado."};
+let current=null,index=0,dirty=false,uploadInProgress=false,supabase=null,studentAuth=null,pendingEmail="",teacherResults=[],teacherInfo=null,selectedReview=null;
 const errorText=(code)=>names[code]||code||"No se completó la solicitud.";
 const notice=(id,text,ok=false)=>{const el=$(id);el.textContent=text;el.classList.toggle("ok",ok)};
 const show=id=>["welcome","exam","receipt","teacher"].forEach(n=>$(n).classList.toggle("hidden",n!==id));
 const money=x=>Number(x).toLocaleString("en-US",{maximumFractionDigits:2});
-const getToken=()=>{try{return JSON.parse(sessionStorage.getItem(STORAGE)||"null")}catch{return null}};
-const setToken=o=>{try{if(o)sessionStorage.setItem(STORAGE,JSON.stringify({attempt_id:o.attempt_id,session_token:o.session_token}));else sessionStorage.removeItem(STORAGE)}catch{}};
+async function ensureStudentAuth(){
+ if(studentAuth)return studentAuth;
+ const lib=await import("https://esm.sh/@supabase/supabase-js@2.49.4");
+ studentAuth=lib.createClient(URL,PUBLIC_KEY,{auth:{
+  autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,
+  flowType:"implicit",storageKey:STUDENT_AUTH_KEY
+ }});
+ return studentAuth;
+}
+async function verifiedStudent(){
+ const client=await ensureStudentAuth();
+ const {data,error}=await client.auth.getUser();
+ const user=data?.user,email=String(user?.email||"").trim().toLowerCase();
+ if(error||!user||!SCHOOL_EMAIL_RE.test(email)||!user.email_confirmed_at)return null;
+ return{user,email};
+}
+async function showVerifiedStudent(){
+ const identity=await verifiedStudent();
+ if(!identity)return false;
+ $("startForm").classList.add("hidden");
+ $("otpPanel").classList.add("hidden");
+ $("verifiedPanel").classList.remove("hidden");
+ $("verifiedStudentEmail").textContent=identity.email;
+ notice("verifiedMsg","Correo validado. Puedes entrar con tu único intento.",true);
+ return true;
+}
 async function request(action,payload={},teacher=false){
  const headers={"content-type":"application/json"};
- if(teacher){
-  if(!supabase)throw Error("No hay autenticación docente.");
-  const {data}=await supabase.auth.getSession();
-  if(!data.session?.access_token)throw Error("Sesión docente expirada.");
+ if(action!=="config"){
+  const client=teacher?await ensureSupabase():await ensureStudentAuth();
+  const {data}=await client.auth.getSession();
+  if(!data.session?.access_token)throw Error(teacher?"Sesión docente expirada.":"Verifica el correo institucional para continuar.");
   headers.authorization="Bearer "+data.session.access_token;
  }
  const control=new AbortController(),timeout=setTimeout(()=>control.abort(),18000);
@@ -72,7 +97,7 @@ function drawNavigation(){
 function renderProblem(){
  if(!current||current.state!=="active")return;
  const q=current.questions[index],one=current.answers?.[String(index+1)]||{values:{},units:{}};
- $("studentLabel").textContent=current.student_name+" · "+current.group+" · Respuestas con registro privado";
+ $("studentLabel").textContent=current.student_name+" · Correo institucional verificado · Respuestas privadas";
  $("numberPill").textContent="PROBLEMA "+String(index+1).padStart(2,"0")+" DE 03";
  $("problemTitle").textContent=q.title;
  $("problemStatement").textContent=q.statement;
@@ -110,7 +135,7 @@ async function save(){
  const a=collect();
  if(Object.values(a.values).some(s=>s&&!validValue(s))){notice("saveMsg","Hay números no válidos.");return false;}
  try{
-  const result=await request("save",{...getToken(),question_number:index+1,revision:current.revision,values:a.values,units:a.units});
+  const result=await request("save",{question_number:index+1,revision:current.revision,values:a.values,units:a.units});
   current.revision=result.revision;current.answers={...current.answers,[String(index+1)]:a};
   dirty=false;$("saveMsg").textContent="✓ Guardado en servidor";
   drawNavigation();return true;
@@ -134,16 +159,58 @@ function finish(data){
 }
 async function initializeAssessment(data){
  current=data;
- if(data.session_token)setToken(data);
  if(data.state==="submitted"){finish(data);return}
  index=0;show("exam");renderProblem();
 }
+async function enterAssessment(){
+ try{
+  const identity=await verifiedStudent();
+  if(!identity){notice("verifiedMsg","El correo no está verificado. Solicita un enlace nuevo.");return;}
+  $("continueBtn").disabled=true;notice("verifiedMsg","Comprobando el acceso...");
+  const result=await request("start");
+  await initializeAssessment(result);
+ }catch(e){notice("verifiedMsg",e.message)}
+ finally{$("continueBtn").disabled=false}
+}
 $("startForm").addEventListener("submit",async e=>{
- e.preventDefault();const code=$("inviteCode").value.trim();
- $("startBtn").disabled=true;notice("startMsg","Validando código...");
- try{const res=await request("start",{code});await initializeAssessment(res);notice("startMsg","",true)}
- catch(e){notice("startMsg",e.message)}finally{$("startBtn").disabled=false}
+ e.preventDefault();
+ const email=$("studentEmail").value.trim().toLowerCase();
+ if(!SCHOOL_EMAIL_RE.test(email)){notice("startMsg","Solo se permiten buzones institucionales @ijr.edu.co.");return;}
+ $("startBtn").disabled=true;notice("startMsg","Solicitando acceso...");
+ try{
+  const client=await ensureStudentAuth();
+  const {error}=await client.auth.signInWithOtp({
+   email,options:{shouldCreateUser:true,emailRedirectTo:location.origin+location.pathname}
+  });
+  if(error)throw error;
+  pendingEmail=email;
+  $("otpPanel").classList.remove("hidden");
+  notice("startMsg","Si este buzón puede recibir mensajes, revisa el enlace o código enviado.",true);
+ }catch(e){notice("startMsg","No se pudo enviar la verificación: "+e.message)}
+ finally{$("startBtn").disabled=false}
 });
+$("verifyForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const code=$("emailOtp").value.trim();
+ if(!/^[0-9]{6,8}$/.test(code)){notice("verifyMsg","Introduce los 6–8 dígitos recibidos.");return;}
+ $("verifyBtn").disabled=true;notice("verifyMsg","Comprobando código...");
+ try{
+  const client=await ensureStudentAuth();
+  const {error}=await client.auth.verifyOtp({email:pendingEmail,token:code,type:"email"});
+  if(error)throw error;
+  if(!await showVerifiedStudent())throw Error("El dominio o la confirmación del buzón no son válidos.");
+  await enterAssessment();
+ }catch(e){notice("verifyMsg",e.message)}
+ finally{$("verifyBtn").disabled=false}
+});
+$("changeEmailBtn").addEventListener("click",()=>{
+ pendingEmail="";
+ $("emailOtp").value="";
+ $("otpPanel").classList.add("hidden");
+ notice("startMsg","");
+});
+$("continueBtn").addEventListener("click",enterAssessment);
+$("studentLogoutBtn").addEventListener("click",logoutStudent);
 function updateEvidenceStatus(){
  const item=current?.evidence;
  const status=$("evidenceStatus");
@@ -156,18 +223,17 @@ $("uploadEvidenceBtn").addEventListener("click",async()=>{
  if(!file){notice("evidenceStatus","Selecciona un PDF o imagen.",false);return;}
  if(file.size>5242880||file.size<64){notice("evidenceStatus","El archivo debe tener entre 64 bytes y 5 MB.");return;}
  if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(file.type)){notice("evidenceStatus","Formato no admitido; utiliza PDF, JPG, PNG o WEBP.");return;}
- const token=getToken();if(!token){notice("evidenceStatus","Inicia sesión con tu código antes de subir.");return;}
+ const auth=await ensureStudentAuth();const {data:authData}=await auth.auth.getSession();
+ if(!authData.session?.access_token){notice("evidenceStatus","Verifica el correo institucional antes de subir.");return;}
  uploadInProgress=true;$("uploadEvidenceBtn").disabled=true;$("submitBtn").disabled=true;
  notice("evidenceStatus","Subiendo archivo y verificando su integridad...");
  try{
   const form=new FormData();
   form.append("action","upload");
-  form.append("attempt_id",token.attempt_id);
-  form.append("session_token",token.session_token);
   form.append("file",file,file.name);
   const controller=new AbortController(),tid=setTimeout(()=>controller.abort(),70000);
   let response;
-  try{response=await fetch(API,{method:"POST",body:form,signal:controller.signal,cache:"no-store"});}
+  try{response=await fetch(API,{method:"POST",headers:{authorization:"Bearer "+authData.session.access_token},body:form,signal:controller.signal,cache:"no-store"});}
   finally{clearTimeout(tid)}
   const data=await response.json();
   if(!response.ok)throw Error(errorText(data.error));
@@ -202,18 +268,33 @@ $("confirmSubmission").addEventListener("click",async()=>{
  $("confirmSubmission").disabled=true;
  notice("confirmStatus","Registrando entrega...");
  try{
-  const r=await request("submit",{...getToken(),revision:current.revision});
+  const r=await request("submit",{revision:current.revision});
   current.state="submitted";setSubmitDialog(false);finish(r);
  }catch(e){
   notice("confirmStatus",e.message);
  }finally{$("confirmSubmission").disabled=false}
 });
-$("receiptExit").addEventListener("click",()=>{setToken(null);current=null;$("inviteCode").value="";show("welcome");});
+async function logoutStudent(){
+ if(studentAuth)await studentAuth.auth.signOut();
+ current=null;pendingEmail="";
+ $("studentEmail").value="";$("emailOtp").value="";
+ $("verifiedPanel").classList.add("hidden");
+ $("otpPanel").classList.add("hidden");
+ $("startForm").classList.remove("hidden");
+ notice("verifiedMsg","");notice("startMsg","");
+ show("welcome");
+}
+$("receiptExit").addEventListener("click",logoutStudent);
 setInterval(updateClock,1000);
 async function restore(){
- const token=getToken();if(!token)return;
- try{const data=await request("status",token);await initializeAssessment({...data,...token})}
- catch{setToken(null)}
+ try{
+  const client=await ensureStudentAuth();
+  const {data}=await client.auth.getSession();
+  if(!data.session)return;
+  if(!await showVerifiedStudent())return;
+  try{const previous=await request("status");await initializeAssessment(previous)}
+  catch(e){notice("verifiedMsg","Sesión institucional activa. Puedes entrar cuando el docente habilite la evaluación.",true)}
+ }catch(e){notice("startMsg","No se pudo recuperar la sesión institucional.")}
 }
 async function ensureSupabase(){
  if(supabase)return supabase;
@@ -293,30 +374,14 @@ function table(headers,rows){
  node.append(body);return node;
 }
 function renderRoster(students){
- const rows=(students||[]).map(s=>{
-  const status=s.attempt?.state||"Sin iniciar";
-  const btn=document.createElement("button");btn.textContent=s.active?"Revocar":"Revocado";btn.disabled=!s.active;
-  btn.addEventListener("click",async()=>{
-   if(!confirm("¿Revocar el código de "+s.student_name+"?"))return;
-   try{await request("admin_revoke",{invite_id:s.id},true);const d=await request("admin_info",{},true);teacherInfo=d;renderRoster(d.students)}catch(e){alert(e.message)}
-  });
-  return [s.student_name,s.group_code,status,s.active?"Activo":"Revocado",btn];
- });
- $("roster").replaceChildren(table(["Estudiante","Grupo","Intento","Código","Acción"],rows));
+ const rows=(students||[]).map(s=>[
+  s.student_name,s.attempt?.state||"Sin iniciar",
+  s.attempt?.started_at?new Date(s.attempt.started_at).toLocaleString("es-CO"):"—",
+  s.attempt?.numeric_score??"Pendiente",
+  s.attempt?.final_score??"Pendiente"
+ ]);
+ $("roster").replaceChildren(table(["Correo verificado","Intento","Fecha de inicio","Nota numérica","Nota final"],rows));
 }
-$("issueBtn").addEventListener("click",async()=>{
- const lines=$("studentBatch").value.trim().split(/\n/).map(s=>s.trim()).filter(Boolean);
- const students=lines.map(l=>{const [student_name,group_code]=l.split("|").map(s=>s.trim());return {student_name,group_code:group_code?.toUpperCase().replace("°","")}});
- if(students.length===0||students.length>40||students.some(x=>!x.student_name||!["9A","9B","9C"].includes(x.group_code))){$("codesOut").textContent="Formato esperado: Nombre y apellido | 9A (máximo 40 líneas).";return}
- if(!confirm("Se crearán "+students.length+" códigos individuales. ¿Continuar?"))return;
- $("issueBtn").disabled=true;$("codesOut").textContent="Generando...";
- try{
-  const r=await request("admin_issue",{students},true);
-  $("codesOut").textContent="CÓDIGOS: CÓPIALOS AHORA Y ENTRÉGALOS EN PRIVADO\n\n"+r.issued.map(x=>x.student_name+" ("+x.group_code+"): "+x.code).join("\n");
-  $("studentBatch").value="";
-  const d=await request("admin_info",{},true);teacherInfo=d;renderRoster(d.students);
- }catch(e){$("codesOut").textContent=e.message}finally{$("issueBtn").disabled=false}
-});
 async function loadResults(){
  $("resultsTable").textContent="Consultando resultados...";
  try{
