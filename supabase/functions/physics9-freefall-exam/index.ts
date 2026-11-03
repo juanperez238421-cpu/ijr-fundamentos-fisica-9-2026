@@ -19,14 +19,20 @@ const json = (data:unknown,status=200,origin:string|null=null) => new Response(J
 }});
 const sha = async (s:string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",enc.encode(s))),b=>b.toString(16).padStart(2,"0")).join("");
 const randHex = (bytes=32) => Array.from(crypto.getRandomValues(new Uint8Array(bytes)),b=>b.toString(16).padStart(2,"0")).join("");
-const base32 = () => {
- const alphabet="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // unambiguous code alphabet, 32 chars
- const a=crypto.getRandomValues(new Uint8Array(24));
- return Array.from(a,n=>alphabet[n%32]).join("").match(/.{1,6}/g)!.join("-");
-};
-const cleanCode=(x:unknown) => typeof x==="string"?x.toUpperCase().replace(/[\s-]/g,""):"";
+const SCHOOL_EMAIL_RE=/^[a-z0-9][a-z0-9._%+-]*@ijr[.]edu[.]co$/;
+type StudentIdentity={id:string;email:string};
+async function studentIdentity(req:Request):Promise<StudentIdentity|null> {
+ const authorization=req.headers.get("authorization")||"";
+ if(!/^Bearer\s+[a-zA-Z0-9._-]+$/.test(authorization))return null;
+ const token=authorization.replace(/^Bearer\s+/,"");
+ const userClient=createClient(URL,ANON,{auth:{persistSession:false,autoRefreshToken:false}});
+ const {data,error}=await userClient.auth.getUser(token);
+ const user=data?.user,email=String(user?.email||"").trim().toLowerCase();
+ if(error||!user?.id||!SCHOOL_EMAIL_RE.test(email))return null;
+ if(!user.email_confirmed_at&&!user.confirmed_at)return null;
+ return{id:user.id,email};
+}
 const validUuid=(x:unknown)=>typeof x==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
-const validSession=(x:unknown)=>typeof x==="string"&&/^[0-9a-f]{64}$/.test(x);
 const nstr=(x:unknown)=>typeof x==="string"&&x.length<=40&&/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(x.trim())&&Number.isFinite(Number(x.replace(",",".")))?Number(x.replace(",",".")):null;
 const numeric=(x:unknown)=>typeof x==="number"&&Number.isFinite(x)?x:null;
 const round2=(x:number)=>Math.round((x+Number.EPSILON)*100)/100;
@@ -91,15 +97,14 @@ async function questions(ids:string[]):Promise<Row[]>{
  if(error||!data||data.length!==3)throw Error("QUESTIONS_UNAVAILABLE");
  return ids.map(id=>{const q=data.find(x=>x.id===id);if(!q)throw Error("VARIANT_MISSING");return q;});
 }
-async function asStudent(p:Row):Promise<Row|null> {
- if(!validUuid(p.attempt_id)||!validSession(p.session_token))return null;
- const digest=await sha(p.session_token);
- const {data,error}=await db.from("physics9_ff_attempts_v1").select("*").eq("id",p.attempt_id).eq("session_hash",digest).maybeSingle();
- if(error)throw Error("SESSION_DB_ERROR");
+async function asStudent(req:Request):Promise<Row|null>{
+ const identity=await studentIdentity(req);
+ if(!identity)return null;
+ const {data,error}=await db.from("physics9_ff_attempts_v1").select("*")
+  .eq("auth_user_id",identity.id).eq("institutional_email",identity.email).maybeSingle();
+ if(error)throw Error("ATTEMPT_LOOKUP_FAILED");
  if(!data)return null;
- const {data:inv,error:inviteError}=await db.from("physics9_ff_invites_v1").select("student_name,group_code,active").eq("id",data.invite_id).single();
- if(inviteError||!inv?.active)return null;
- return {...data,student_name:inv.student_name,group_code:inv.group_code};
+ return {...data,student_name:identity.email,group_code:"Institucional"};
 }
 async function studentView(a:Row,s:Row,session:string|null=null){
  const qs=await questions(a.variant_ids);
@@ -130,55 +135,34 @@ async function record(type:string,actor:string,attemptId:string|null,detail:Row=
  const {error}=await db.from("physics9_ff_events_v1").insert({attempt_id:attemptId,actor,event_type:type,details:detail});
  if(error)throw Error("AUDIT_WRITE_FAILED");
 }
-async function failRate(ip:string){
- const now=Date.now(),key=await sha(SERVICE+"|physics9-freefall|"+ip);
- const {data}=await db.from("physics9_ff_rate_v1").select("*").eq("ip_digest",key).maybeSingle();
- if(data?.blocked_until&&Date.parse(data.blocked_until)>now)return false;
- const fresh=!data||now-Date.parse(data.window_start)>15*60000;
- const failures=fresh?1:Number(data.failures)+1;
- await db.from("physics9_ff_rate_v1").upsert({ip_digest:key,window_start:fresh?new Date(now).toISOString():data.window_start,failures,blocked_until:failures>=9?new Date(now+15*60000).toISOString():null},{onConflict:"ip_digest"});
- return failures<9;
-}
-async function requestAllowed(ip:string){
- const key=await sha(SERVICE+"|physics9-freefall|"+ip);
- const {data}=await db.from("physics9_ff_rate_v1").select("blocked_until").eq("ip_digest",key).maybeSingle();
- return !data?.blocked_until||Date.parse(data.blocked_until)<=Date.now();
-}
-async function handleStudent(p:Row,origin:string|null,ip:string){
+async function handleStudent(p:Row,req:Request,origin:string|null){
  const action=p.action,s=await settings();
- if(action==="config")return json({enabled:s.enabled,open:isOpen(s),opens_at:s.opens_at,closes_at:s.closes_at,duration_minutes:s.duration_minutes,question_count:3},200,origin);
+ if(action==="config")return json({enabled:s.enabled,open:isOpen(s),opens_at:s.opens_at,closes_at:s.closes_at,duration_minutes:s.duration_minutes,question_count:3,auth_mode:"institutional_email"},200,origin);
  if(action==="start"){
-  if(!isOpen(s))return json({error:"EXAM_NOT_OPEN"},403,origin);
-  if(!(await requestAllowed(ip)))return json({error:"TEMPORARILY_BLOCKED"},429,origin);
-  const code=cleanCode(p.code);
-  if(!/^[A-Z2-9]{24}$/.test(code)){await failRate(ip);return json({error:"INVALID_CODE"},403,origin);}
-  const digest=await sha(code);
-  const {data:invite,error:ie}=await db.from("physics9_ff_invites_v1").select("*").eq("code_hash",digest).eq("active",true).maybeSingle();
-  if(ie)throw Error("INVITE_LOOKUP_FAILED");
-  if(!invite){await failRate(ip);return json({error:"INVALID_CODE"},403,origin);}
-  const {data:old,error:oe}=await db.from("physics9_ff_attempts_v1").select("*").eq("invite_id",invite.id).maybeSingle();
-  if(oe)throw Error("ATTEMPT_LOOKUP_FAILED");
-  if(old?.state==="submitted"){
-   const a={...old,student_name:invite.student_name,group_code:invite.group_code};
-   return json(await studentView(a,s),200,origin);
-  }
-  const token=randHex(),session_hash=await sha(token);
-  let a:Row;
+  const identity=await studentIdentity(req);
+  if(!identity)return json({error:"INSTITUTIONAL_EMAIL_REQUIRED"},401,origin);
+  const {data:old,error:readError}=await db.from("physics9_ff_attempts_v1")
+   .select("*").eq("institutional_email",identity.email).maybeSingle();
+  if(readError)throw Error("ATTEMPT_LOOKUP_FAILED");
   if(old){
-   const {data,error}=await db.from("physics9_ff_attempts_v1").update({session_hash,updated_at:new Date().toISOString()}).eq("id",old.id).eq("state","active").select("*").maybeSingle();
-   if(error||!data)throw Error("RECOVERY_FAILED");a=data;
-  }else{
-   const variant_ids=[1,2,3].map(n=>"P"+n+"V"+(crypto.getRandomValues(new Uint8Array(1))[0]%3+1));
-   const now=Date.now(),limit=now+Number(s.duration_minutes)*60000,close=s.closes_at?Date.parse(s.closes_at):Infinity;
-   const {data,error}=await db.from("physics9_ff_attempts_v1").insert({invite_id:invite.id,variant_ids,session_hash,deadline_at:new Date(Math.min(limit,close)).toISOString()}).select("*").maybeSingle();
-   if(error||!data)return json({error:"START_CONFLICT_RETRY"},409,origin);
-   a=data;
+   if(old.auth_user_id!==identity.id)
+    return json({error:"IDENTITY_CONFLICT_CONTACT_TEACHER"},403,origin);
+   return json(await studentView({...old,student_name:identity.email,group_code:"Institucional"},s),200,origin);
   }
-  await record(old?"session_recovered":"session_started","student",a.id,{group:invite.group_code});
-  return json(await studentView({...a,student_name:invite.student_name,group_code:invite.group_code},s,token),200,origin);
+  if(!isOpen(s))return json({error:"EXAM_NOT_OPEN"},403,origin);
+  const variant_ids=[1,2,3].map(n=>"P"+n+"V"+(crypto.getRandomValues(new Uint8Array(1))[0]%3+1));
+  const now=Date.now(),limit=now+Number(s.duration_minutes)*60000,close=s.closes_at?Date.parse(s.closes_at):Infinity;
+  const {data,error}=await db.from("physics9_ff_attempts_v1").insert({
+   invite_id:null,auth_user_id:identity.id,institutional_email:identity.email,
+   variant_ids,session_hash:await sha(crypto.randomUUID()),
+   deadline_at:new Date(Math.min(limit,close)).toISOString()
+  }).select("*").maybeSingle();
+  if(error||!data)return json({error:"START_CONFLICT_RETRY"},409,origin);
+  await record("session_started","student",data.id,{auth_user_id:identity.id,identity_provider:"verified_school_email"});
+  return json(await studentView({...data,student_name:identity.email,group_code:"Institucional"},s),200,origin);
  }
- const a=await asStudent(p);
- if(!a)return json({error:"INVALID_SESSION"},401,origin);
+ const a=await asStudent(req);
+ if(!a)return json({error:"INSTITUTIONAL_EMAIL_REQUIRED"},401,origin);
  if(action==="status")return json(await studentView(a,s),200,origin);
  if(a.state!=="active")return json({error:"ALREADY_SUBMITTED"},409,origin);
  if(!isOpen(s)||Date.now()>=Date.parse(a.deadline_at))return json({error:"DEADLINE_REACHED"},403,origin);
@@ -252,8 +236,7 @@ async function uploadEvidence(req:Request,origin:string|null):Promise<Response>{
  if(!(rawFile instanceof File))return json({error:"FILE_REQUIRED"},400,origin);
  if(rawFile.size<64||rawFile.size>EVIDENCE_MAX_BYTES)return json({error:"FILE_TOO_LARGE"},413,origin);
  if(rawFile.name.length<1||rawFile.name.length>160)return json({error:"FILE_NAME_INVALID"},400,origin);
- const p={attempt_id:form.get("attempt_id"),session_token:form.get("session_token")};
- const a=await asStudent(p),s=await settings();
+ const a=await asStudent(req),s=await settings();
  if(!a)return json({error:"INVALID_SESSION"},401,origin);
  if(a.state!=="active"||!isOpen(s)||Date.now()>=Date.parse(a.deadline_at))return json({error:"DEADLINE_REACHED"},403,origin);
  const bytes=new Uint8Array(await rawFile.arrayBuffer());
@@ -285,30 +268,15 @@ async function handleTeacher(p:Row,req:Request,origin:string|null){
  if(!userId)return json({error:"TEACHER_MFA_REQUIRED"},403,origin);
  const action=p.action,s=await settings();
  if(action==="admin_info"){
-  const {data:inv}=await db.from("physics9_ff_invites_v1").select("id,student_name,group_code,active,issued_at,revoked_at").order("issued_at",{ascending:false}).limit(300);
-  const {data:attempts}=await db.from("physics9_ff_attempts_v1").select("id,invite_id,state,started_at,submitted_at,numeric_score,final_score,reviewed_at").limit(300);
-  return json({settings:s,students:(inv||[]).map(z=>({...z,attempt:(attempts||[]).find(a=>a.invite_id===z.id)||null}))},200,origin);
- }
- if(action==="admin_issue"){
-  if(!Array.isArray(p.students)||p.students.length<1||p.students.length>40)return json({error:"STUDENT_LIST_INVALID"},400,origin);
-  const students=p.students.map((x:Row)=>({student_name:typeof x.student_name==="string"?x.student_name.trim().replace(/\s+/g," "):"",group_code:x.group_code}));
-  if(students.some((x:Row)=>x.student_name.length<2||x.student_name.length>120||!["9A","9B","9C"].includes(x.group_code)))return json({error:"STUDENT_DETAILS_INVALID"},400,origin);
-  const codes:Row[]=[];
-  for(const student of students){
-   const code=base32(),hash=await sha(cleanCode(code));
-   const {data,error}=await db.from("physics9_ff_invites_v1").insert({...student,code_hash:hash}).select("id").single();
-   if(error||!data)throw Error("INVITE_CREATE_FAILED");
-   codes.push({...student,id:data.id,code});
-  }
-  await record("codes_issued","teacher",null,{teacher_id:userId,count:codes.length,invites:codes.map(x=>x.id)});
-  return json({issued:codes,warning:"Codes are shown only once. Store and deliver them individually."},200,origin);
- }
- if(action==="admin_revoke"){
-  if(!validUuid(p.invite_id))return json({error:"INVITE_ID_INVALID"},400,origin);
-  const {data,error}=await db.from("physics9_ff_invites_v1").update({active:false,revoked_at:new Date().toISOString()}).eq("id",p.invite_id).eq("active",true).select("id").maybeSingle();
-  if(error||!data)return json({error:"REVOKE_FAILED"},409,origin);
-  await record("invite_revoked","teacher",null,{teacher_id:userId,invite_id:data.id});
-  return json({revoked:true},200,origin);
+  const {data:attempts,error}=await db.from("physics9_ff_attempts_v1")
+   .select("id,institutional_email,auth_user_id,state,started_at,submitted_at,numeric_score,final_score,reviewed_at")
+   .not("institutional_email","is",null).order("started_at",{ascending:false}).limit(300);
+  if(error)throw Error("STUDENT_LIST_FAILED");
+  return json({settings:s,students:(attempts||[]).map(a=>({
+   id:a.id,student_name:a.institutional_email,group_code:"Institucional",active:true,
+   attempt:{id:a.id,state:a.state,started_at:a.started_at,submitted_at:a.submitted_at,
+    numeric_score:a.numeric_score,final_score:a.final_score,reviewed_at:a.reviewed_at}
+  }))},200,origin);
  }
  if(action==="admin_configure"){
   const c=p.settings||{};
@@ -325,7 +293,7 @@ async function handleTeacher(p:Row,req:Request,origin:string|null){
   return json({settings:data},200,origin);
  }
  if(action==="admin_results"){
-  const {data:rows,error}=await db.from("physics9_ff_attempts_v1").select("*").order("started_at",{ascending:false}).limit(300);
+  const {data:rows,error}=await db.from("physics9_ff_attempts_v1").select("*").not("institutional_email","is",null).order("started_at",{ascending:false}).limit(300);
   if(error)throw Error("RESULT_LOOKUP_FAILED");
   const {data:invite}=await db.from("physics9_ff_invites_v1").select("id,student_name,group_code");
   const {data:evidence}=await db.from("physics9_ff_evidence_v1")
@@ -333,7 +301,7 @@ async function handleTeacher(p:Row,req:Request,origin:string|null){
   const byEvidence=new Map((evidence||[]).map(x=>[x.attempt_id,evidencePublic(x)]));
   const byId=new Map((invite||[]).map(x=>[x.id,x]));
   return json({results:(rows||[]).map((a:Row)=>({
-   id:a.id,student:byId.get(a.invite_id)||{student_name:"(Unknown)",group_code:"?"},state:a.state,started_at:a.started_at,submitted_at:a.submitted_at,
+   id:a.id,student:a.institutional_email?{student_name:a.institutional_email,group_code:"Institucional",email:a.institutional_email}:byId.get(a.invite_id)||{student_name:"(Unknown)",group_code:"?"},state:a.state,started_at:a.started_at,submitted_at:a.submitted_at,
    answers:a.answers,breakdown:a.breakdown,numeric_score:a.numeric_score,final_score:a.final_score,teacher_feedback:a.teacher_feedback,reviewed_at:a.reviewed_at,
    variant_ids:a.variant_ids,evidence:byEvidence.get(a.id)||null
   }))},200,origin);
@@ -391,9 +359,8 @@ Deno.serve(async(req:Request)=>{
   if(raw.length>25000)return json({error:"PAYLOAD_TOO_LARGE"},413,origin);
   const p=JSON.parse(raw);
   if(!p||typeof p!=="object"||Array.isArray(p)||typeof p.action!=="string")return json({error:"INVALID_PAYLOAD"},400,origin);
-  const ip=(req.headers.get("x-forwarded-for")||"").split(",")[0].trim().slice(0,120);
   if(p.action.startsWith("admin_"))return await handleTeacher(p,req,origin);
-  return await handleStudent(p,origin,ip);
+  return await handleStudent(p,req,origin);
  }catch(error){
   console.error("physics9-freefall",error instanceof Error?error.message:"unexpected");
   return json({error:"SERVER_ERROR"},500,origin);
