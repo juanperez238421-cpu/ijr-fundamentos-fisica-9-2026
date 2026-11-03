@@ -75,6 +75,18 @@
     </div>
    </section>
    <section id="receipt" class="receipt-view hidden"><div class="receipt-card"><div class="success-mark">✓</div><p class="eyebrow">REGISTRO AUDITABLE</p><h1 id="receiptTitle">Entrega registrada</h1><p id="receiptText">Las respuestas fueron registradas. La calificación definitiva requiere revisión docente.</p><div id="receiptData" class="receipt-data"></div><button class="secondary" id="receiptExit" type="button">Volver al inicio</button></div></section>
+   <div id="submitDialog" class="modal-layer hidden" aria-hidden="true">
+     <div class="modal-surface" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmDescription">
+       <p class="eyebrow">CONFIRMACIÓN DEFINITIVA</p>
+       <h2 id="confirmTitle">¿Enviar tu evaluación?</h2>
+       <p id="confirmDescription">Se registrarán tus tres procedimientos y nueve respuestas numéricas. Después de enviar no podrás editarlas.</p>
+       <div class="modal-actions">
+         <button id="cancelSubmission" type="button" class="secondary">Seguir revisando</button>
+         <button id="confirmSubmission" type="button" class="primary">Confirmar entrega definitiva</button>
+       </div>
+       <p id="confirmStatus" role="status" class="alert" aria-live="polite"></p>
+     </div>
+   </div>
    <section id="teacher" class="teacher hidden">
     <div class="teacher-head"><div><p class="eyebrow">CONSOLa SEGURA · SOLO DOCENTES</p><h1>Control de evaluación</h1><p>MFA (doble factor) obligatorio · Resultados y tolerancias privados</p></div><button class="secondary" id="teacherExit" type="button">← Volver</button></div>
     <div id="teacherLogin" class="teacher-login">
