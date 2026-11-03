@@ -21,6 +21,13 @@ jobs:
     timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Parse Edge TypeScript (without modifying tracked files)
+        run: |
+          cp supabase/functions/physics9-freefall-exam/index.ts /tmp/physics9-freefall-check.ts
+          deno fmt /tmp/physics9-freefall-check.ts
       - name: Node and numeric/scientific contracts
         run: |
           node --check evaluaciones/caida-libre/app.js
