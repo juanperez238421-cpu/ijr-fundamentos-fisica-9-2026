@@ -4,7 +4,7 @@ Página: https://juanperez238421-cpu.github.io/ijr-fundamentos-fisica-9-2026/eva
 
 ## Registro exclusivo con correo institucional
 
-Cualquier persona que controle un buzón real con terminación EXACTA @ijr.edu.co puede solicitar su ingreso sin contraseña del examen ni código individual entregado por docente. El estudiante debe comprobar posesión del correo por enlace mágico u OTP de Supabase Auth. El backend valida el JWT con auth.getUser, la dirección email_confirmed_at/confirmed_at y el dominio exacto; no confía en el correo escrito ni en los metadatos editables. Existe un único intento por dirección verificada, protegido con índices únicos.
+Cualquier persona que controle un buzón real con terminación EXACTA @ijr.edu.co puede solicitar su ingreso sin contraseña del examen ni código individual entregado por docente. El estudiante debe comprobar posesión del correo por enlace mágico u OTP de Supabase Auth. El backend valida el JWT con auth.getUser, la dirección email_confirmed_at y el dominio exacto; no confía en el correo escrito ni en los metadatos editables. Existe un único intento por dirección verificada, protegido con índices únicos.
 
 La sesión se conserva para recuperar borradores y entregar al regresar. El docente conserva acceso con cuenta teacher/admin y MFA nivel aal2. La lista docente de Participantes muestra los emails autenticados; NO hay invitaciones.
 
