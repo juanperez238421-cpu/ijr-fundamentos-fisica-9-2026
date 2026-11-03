@@ -92,14 +92,14 @@ test("equivalent physical units convert properly and mismatched dimensions are r
  assert.match(api,/submitted_unit:unit/);
  assert.match(api,/expected_unit:/);
 });
-test("server-only file upload checks size, signature, student token and submission deadline",()=>{
+test("server-only file upload checks size, signature, verified JWT and deadline",()=>{
  assert.match(api,/function detectMime\(bytes:Uint8Array\)/);
  assert.match(api,/application\/pdf/);
  assert.match(api,/image\/jpeg/);
  assert.match(api,/image\/png/);
  assert.match(api,/image\/webp/);
  assert.match(api,/rawFile\.size>EVIDENCE_MAX_BYTES/);
- assert.match(api,/const a=await asStudent\(p\),s=await settings\(\)/);
+ assert.match(api,/const a=await asStudent\(req\),s=await settings\(\)/);
  assert.match(api,/Date\.now\(\)>=Date\.parse\(a\.deadline_at\)/);
  assert.match(api,/uploadEvidence\(req,origin\)/);
  assert.match(api,/EVIDENCE_STORAGE_FAILED/);
@@ -113,4 +113,47 @@ test("no reasoning text is automatically graded; teacher reviews private file",(
  assert.match(js,/SHA-256/);
  assert.match(js,/Archivo de procedimiento/);
  assert.match(js,/EVIDENCE_REQUIRED/);
+});
+
+
+const emailMigration=fs.readFileSync(path.join(base,
+ "../../supabase/migrations/20261103_physics9_freefall_institutional_email_v3.sql"),"utf8");
+const QA_EMAIL="qa.caidalibre.2026@ijr.edu.co"; // Synthetic identifier only; mailbox must be provisioned by school IT.
+test("only verified school domain mailboxes are eligible",()=>{
+ const re=/^[a-z0-9][a-z0-9._%+-]*@ijr[.]edu[.]co$/;
+ assert.equal(re.test(QA_EMAIL),true);
+ for(const bad of [
+  "name@gmail.com","name@ijr.edu.co.evil.test","name@alumnos.ijr.edu.co",
+  "name@fakeijr.edu.co","name@ijr.edu.co ","name@ijr-edu.co"
+ ])assert.equal(re.test(bad),false,bad);
+ assert.match(api,/SCHOOL_EMAIL_RE/);
+ assert.match(api,/email_confirmed_at/);
+ assert.match(api,/auth\.getUser\(token\)/);
+ assert.match(api,/identity\.email/);
+ assert.doesNotMatch(api,/p\.code/);
+ assert.doesNotMatch(api,/p\.email/);
+});
+test("Supabase passwordless email sign in with confirmed Auth JWT",()=>{
+ assert.match(html,/id="studentEmail"/);
+ assert.match(html,/type="email"/);
+ assert.match(html,/id="otpPanel"/);
+ assert.match(html,/id="verifyForm"/);
+ assert.match(js,/auth\.signInWithOtp\(/);
+ assert.match(js,/auth\.verifyOtp\(/);
+ assert.match(js,/getSession\(\)/);
+ assert.match(js,/headers\.authorization="Bearer "/);
+ assert.match(js,/SCHOOL_EMAIL_RE/);
+ assert.doesNotMatch(js,/getToken\(\)|setToken\(/);
+ assert.doesNotMatch(html,/id="inviteCode"/);
+ assert.doesNotMatch(html,/id="issueBtn"/);
+ assert.doesNotMatch(api,/action==="admin_issue"/);
+ assert.doesNotMatch(api,/action==="admin_revoke"/);
+});
+test("one attempt per verified email and legacy history preserved",()=>{
+ assert.match(emailMigration,/alter column invite_id drop not null/);
+ assert.match(emailMigration,/unique index if not exists physics9_ff_unique_email_v3/);
+ assert.match(emailMigration,/unique index if not exists physics9_ff_unique_auth_user_v3/);
+ assert.match(emailMigration,/institutional_email ~/);
+ assert.match(api,/\.eq\("institutional_email",identity\.email\)/);
+ assert.match(api,/invite_id:null,auth_user_id:identity\.id,institutional_email:identity\.email/);
 });
