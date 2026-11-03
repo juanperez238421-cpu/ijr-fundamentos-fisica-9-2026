@@ -3,56 +3,43 @@ const API="https://rlfxnjbqxbozjdzkbwlz.supabase.co/functions/v1/physics9-freefa
 const URL="https://rlfxnjbqxbozjdzkbwlz.supabase.co";
 const PUBLIC_KEY="sb_publishable_rmVOQ3Orx49KpW_4uMqYew_c2HpcA87";
 const SCHOOL_EMAIL_RE=/^[a-z0-9][a-z0-9._%+-]*@ijr[.]edu[.]co$/;
-const STUDENT_AUTH_KEY="ijr-physics9-institutional-student-v3";
+const GUEST_SESSION_KEY="ijr-physics9-direct-email-v4";
 const $=id=>document.getElementById(id);
 const UNIT_CHOICES={
  time:["s","min","ft","ft/s"],height:["ft","m","s","ft/s"],velocity:["ft/s","m/s","ft","s"]
 };
 const MEASURE_TYPE={impact_time:"time",peak_time:"time",height_observation:"height",max_height:"height",velocity_observation:"velocity",impact_velocity:"velocity"};
 const fieldsByProblem={1:["impact_time","height_observation","velocity_observation"],2:["peak_time","max_height","impact_time"],3:["height_observation","impact_time","impact_velocity"]};
-const names={EXAM_NOT_OPEN:"La evaluación no está abierta. Consulta al docente.",INSTITUTIONAL_EMAIL_REQUIRED:"Debes verificar un correo válido @ijr.edu.co para entrar.",IDENTITY_CONFLICT_CONTACT_TEACHER:"Esta dirección ya tiene un intento asociado a otra identidad. Contacta al docente.",START_CONFLICT_RETRY:"El intento se está creando. Vuelve a intentarlo.",DEADLINE_REACHED:"Se cumplió el plazo de entrega definido por el servidor.",REVISION_CONFLICT:"La respuesta cambió en otra sesión. Recarga el intento antes de continuar.",INCOMPLETE_ANSWERS:"Faltan valores numéricos o unidades en alguno de los tres problemas.",INVALID_NUMBER:"Ingresa solo números; se admite el signo menos y los decimales.",INVALID_UNITS:"Selecciona una unidad en cada resultado.",EVIDENCE_REQUIRED:"Debes subir un PDF o una imagen con el procedimiento antes de entregar.",FILE_TOO_LARGE:"El archivo excede 5 MB.",UNSUPPORTED_FILE_TYPE:"Solo se admiten archivos PDF, JPG, PNG o WEBP.",FILE_REQUIRED:"Selecciona un PDF o imagen antes de subir.",EVIDENCE_SAVE_FAILED:"No se pudo registrar el archivo. Inténtalo de nuevo.",TEACHER_MFA_REQUIRED:"Debes iniciar sesión con una cuenta docente y MFA habilitado."};
-let current=null,index=0,dirty=false,uploadInProgress=false,supabase=null,studentAuth=null,pendingEmail="",teacherResults=[],teacherInfo=null,selectedReview=null;
+const names={EXAM_NOT_OPEN:"La evaluación no está abierta. Consulta al docente.",INVALID_INSTITUTIONAL_EMAIL:"Solo se aceptan correos con dominio @ijr.edu.co.",EMAIL_ALREADY_REGISTERED_DIFFERENT_SESSION:"Este correo ya inició una evaluación en otra sesión. Por seguridad, contacta al docente si perdiste la pestaña original.",INVALID_SESSION:"Esta sesión ya no tiene acceso al intento. Vuelve a abrirlo desde la pestaña donde comenzaste.",START_CONFLICT_RETRY:"El intento se está creando. Vuelve a intentarlo.",DEADLINE_REACHED:"Se cumplió el plazo de entrega definido por el servidor.",REVISION_CONFLICT:"La respuesta cambió en otra sesión. Recarga el intento antes de continuar.",INCOMPLETE_ANSWERS:"Faltan valores numéricos o unidades en alguno de los tres problemas.",INVALID_NUMBER:"Ingresa solo números; se admite el signo menos y los decimales.",INVALID_UNITS:"Selecciona una unidad en cada resultado.",EVIDENCE_REQUIRED:"Debes subir un PDF o una imagen con el procedimiento antes de entregar.",FILE_TOO_LARGE:"El archivo excede 5 MB.",UNSUPPORTED_FILE_TYPE:"Solo se admiten archivos PDF, JPG, PNG o WEBP.",FILE_REQUIRED:"Selecciona un PDF o imagen antes de subir.",EVIDENCE_SAVE_FAILED:"No se pudo registrar el archivo. Inténtalo de nuevo.",TEACHER_MFA_REQUIRED:"Debes iniciar sesión con una cuenta docente y MFA habilitado."};
+let current=null,index=0,dirty=false,uploadInProgress=false,supabase=null,teacherResults=[],teacherInfo=null,selectedReview=null;
 const errorText=(code)=>names[code]||code||"No se completó la solicitud.";
 const notice=(id,text,ok=false)=>{const el=$(id);el.textContent=text;el.classList.toggle("ok",ok)};
 const show=id=>["welcome","exam","receipt","teacher"].forEach(n=>$(n).classList.toggle("hidden",n!==id));
 const money=x=>Number(x).toLocaleString("en-US",{maximumFractionDigits:2});
-async function ensureStudentAuth(){
- if(studentAuth)return studentAuth;
- const lib=await import("https://esm.sh/@supabase/supabase-js@2.49.4");
- studentAuth=lib.createClient(URL,PUBLIC_KEY,{auth:{
-  autoRefreshToken:true,persistSession:true,detectSessionInUrl:true,
-  flowType:"implicit",storageKey:STUDENT_AUTH_KEY
- }});
- return studentAuth;
+// Internal opaque attempt session is not a verification code and is never entered by the student.
+function guestSession(){
+ try{const a=JSON.parse(sessionStorage.getItem(GUEST_SESSION_KEY)||"null");
+  return a&&typeof a.email==="string"&&typeof a.attempt_id==="string"&&typeof a.session_token==="string"?a:null;
+ }catch{return null}
 }
-async function verifiedStudent(){
- const client=await ensureStudentAuth();
- const {data,error}=await client.auth.getUser();
- const user=data?.user,email=String(user?.email||"").trim().toLowerCase();
- if(error||!user||!SCHOOL_EMAIL_RE.test(email)||!user.email_confirmed_at)return null;
- return{user,email};
-}
-async function showVerifiedStudent(){
- const identity=await verifiedStudent();
- if(!identity)return false;
- $("startForm").classList.add("hidden");
- $("otpPanel").classList.add("hidden");
- $("verifiedPanel").classList.remove("hidden");
- $("verifiedStudentEmail").textContent=identity.email;
- notice("verifiedMsg","Correo validado. Puedes entrar con tu único intento.",true);
- return true;
+function keepGuestSession(a){
+ try{if(a)sessionStorage.setItem(GUEST_SESSION_KEY,JSON.stringify(a));
+ else sessionStorage.removeItem(GUEST_SESSION_KEY);}catch{}
 }
 async function request(action,payload={},teacher=false){
  const headers={"content-type":"application/json"};
- if(action!=="config"){
-  const client=teacher?await ensureSupabase():await ensureStudentAuth();
-  const {data}=await client.auth.getSession();
-  if(!data.session?.access_token)throw Error(teacher?"Sesión docente expirada.":"Verifica el correo institucional para continuar.");
+ if(teacher){
+  const client=await ensureSupabase(),{data}=await client.auth.getSession();
+  if(!data.session?.access_token)throw Error("Sesión docente expirada.");
   headers.authorization="Bearer "+data.session.access_token;
  }
+ const credentials=(!teacher&&action!=="config"&&action!=="start")?guestSession():null;
+ if(!teacher&&action!=="config"&&action!=="start"&&!credentials)
+  throw Error("No se encuentra la sesión de esta evaluación. Regresa al navegador original.");
+ const body=JSON.stringify({action,...(credentials?{attempt_id:credentials.attempt_id,session_token:credentials.session_token}:{}),...payload});
  const control=new AbortController(),timeout=setTimeout(()=>control.abort(),18000);
  try{
-  const res=await fetch(API,{method:"POST",headers,body:JSON.stringify({action,...payload}),signal:control.signal,cache:"no-store"});
+  const res=await fetch(API,{method:"POST",headers,body,signal:control.signal,cache:"no-store"});
   let data;try{data=await res.json()}catch{throw Error("Respuesta inválida del servidor.")}
   if(!res.ok)throw Error(errorText(data.error));
   return data;
@@ -97,7 +84,7 @@ function drawNavigation(){
 function renderProblem(){
  if(!current||current.state!=="active")return;
  const q=current.questions[index],one=current.answers?.[String(index+1)]||{values:{},units:{}};
- $("studentLabel").textContent=current.student_name+" · Correo institucional verificado · Respuestas privadas";
+ $("studentLabel").textContent=current.student_name+" · Correo registrado sin verificación · Respuestas privadas";
  $("numberPill").textContent="PROBLEMA "+String(index+1).padStart(2,"0")+" DE 03";
  $("problemTitle").textContent=q.title;
  $("problemStatement").textContent=q.statement;
@@ -159,58 +146,24 @@ function finish(data){
 }
 async function initializeAssessment(data){
  current=data;
+ if(data.session_token)keepGuestSession({email:data.student_name.toLowerCase(),attempt_id:data.attempt_id,session_token:data.session_token});
  if(data.state==="submitted"){finish(data);return}
  index=0;show("exam");renderProblem();
-}
-async function enterAssessment(){
- try{
-  const identity=await verifiedStudent();
-  if(!identity){notice("verifiedMsg","El correo no está verificado. Solicita un enlace nuevo.");return;}
-  $("continueBtn").disabled=true;notice("verifiedMsg","Comprobando el acceso...");
-  const result=await request("start");
-  await initializeAssessment(result);
- }catch(e){notice("verifiedMsg",e.message)}
- finally{$("continueBtn").disabled=false}
 }
 $("startForm").addEventListener("submit",async e=>{
  e.preventDefault();
  const email=$("studentEmail").value.trim().toLowerCase();
- if(!SCHOOL_EMAIL_RE.test(email)){notice("startMsg","Solo se permiten buzones institucionales @ijr.edu.co.");return;}
- $("startBtn").disabled=true;notice("startMsg","Solicitando acceso...");
+ if(!SCHOOL_EMAIL_RE.test(email)){notice("startMsg","Solo se aceptan direcciones @ijr.edu.co.");return;}
+ $("startBtn").disabled=true;notice("startMsg","Registrando y abriendo evaluación...");
  try{
-  const client=await ensureStudentAuth();
-  const {error}=await client.auth.signInWithOtp({
-   email,options:{shouldCreateUser:true,emailRedirectTo:location.origin+location.pathname}
+  const previous=guestSession();
+  const response=await request("start",{
+   email,...(previous?.email===email?{attempt_id:previous.attempt_id,session_token:previous.session_token}:{})
   });
-  if(error)throw error;
-  pendingEmail=email;
-  $("otpPanel").classList.remove("hidden");
-  notice("startMsg","Si este buzón puede recibir mensajes, revisa el enlace o código enviado.",true);
- }catch(e){notice("startMsg","No se pudo enviar la verificación: "+e.message)}
+  await initializeAssessment(response);
+ }catch(error){notice("startMsg",error.message)}
  finally{$("startBtn").disabled=false}
 });
-$("verifyForm").addEventListener("submit",async e=>{
- e.preventDefault();
- const code=$("emailOtp").value.trim();
- if(!/^[0-9]{6,8}$/.test(code)){notice("verifyMsg","Introduce los 6–8 dígitos recibidos.");return;}
- $("verifyBtn").disabled=true;notice("verifyMsg","Comprobando código...");
- try{
-  const client=await ensureStudentAuth();
-  const {error}=await client.auth.verifyOtp({email:pendingEmail,token:code,type:"email"});
-  if(error)throw error;
-  if(!await showVerifiedStudent())throw Error("El dominio o la confirmación del buzón no son válidos.");
-  await enterAssessment();
- }catch(e){notice("verifyMsg",e.message)}
- finally{$("verifyBtn").disabled=false}
-});
-$("changeEmailBtn").addEventListener("click",()=>{
- pendingEmail="";
- $("emailOtp").value="";
- $("otpPanel").classList.add("hidden");
- notice("startMsg","");
-});
-$("continueBtn").addEventListener("click",enterAssessment);
-$("studentLogoutBtn").addEventListener("click",logoutStudent);
 function updateEvidenceStatus(){
  const item=current?.evidence;
  const status=$("evidenceStatus");
@@ -223,17 +176,19 @@ $("uploadEvidenceBtn").addEventListener("click",async()=>{
  if(!file){notice("evidenceStatus","Selecciona un PDF o imagen.",false);return;}
  if(file.size>5242880||file.size<64){notice("evidenceStatus","El archivo debe tener entre 64 bytes y 5 MB.");return;}
  if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(file.type)){notice("evidenceStatus","Formato no admitido; utiliza PDF, JPG, PNG o WEBP.");return;}
- const auth=await ensureStudentAuth();const {data:authData}=await auth.auth.getSession();
- if(!authData.session?.access_token){notice("evidenceStatus","Verifica el correo institucional antes de subir.");return;}
+ const guest=guestSession();
+ if(!guest){notice("evidenceStatus","Se perdió la sesión de esta evaluación. Regresa a la pestaña original.");return;}
  uploadInProgress=true;$("uploadEvidenceBtn").disabled=true;$("submitBtn").disabled=true;
  notice("evidenceStatus","Subiendo archivo y verificando su integridad...");
  try{
   const form=new FormData();
   form.append("action","upload");
+  form.append("attempt_id",guest.attempt_id);
+  form.append("session_token",guest.session_token);
   form.append("file",file,file.name);
   const controller=new AbortController(),tid=setTimeout(()=>controller.abort(),70000);
   let response;
-  try{response=await fetch(API,{method:"POST",headers:{authorization:"Bearer "+authData.session.access_token},body:form,signal:controller.signal,cache:"no-store"});}
+  try{response=await fetch(API,{method:"POST",body:form,signal:controller.signal,cache:"no-store"});}
   finally{clearTimeout(tid)}
   const data=await response.json();
   if(!response.ok)throw Error(errorText(data.error));
@@ -274,27 +229,29 @@ $("confirmSubmission").addEventListener("click",async()=>{
   notice("confirmStatus",e.message);
  }finally{$("confirmSubmission").disabled=false}
 });
-async function logoutStudent(){
- if(studentAuth)await studentAuth.auth.signOut();
- current=null;pendingEmail="";
- $("studentEmail").value="";$("emailOtp").value="";
- $("verifiedPanel").classList.add("hidden");
- $("otpPanel").classList.add("hidden");
- $("startForm").classList.remove("hidden");
- notice("verifiedMsg","");notice("startMsg","");
+function logoutStudent(){
+ current=null;keepGuestSession(null);
+ $("studentEmail").value="";
+ notice("startMsg","");
  show("welcome");
 }
-$("receiptExit").addEventListener("click",logoutStudent);
+$("guestLogout").addEventListener("click",logoutStudent);
+$("receiptExit").addEventListener("click",()=>{
+ current=null;
+ const remembered=guestSession();
+ if(remembered)$("studentEmail").value=remembered.email;
+ show("welcome");
+});
 setInterval(updateClock,1000);
 async function restore(){
+ const saved=guestSession();if(!saved)return;
  try{
-  const client=await ensureStudentAuth();
-  const {data}=await client.auth.getSession();
-  if(!data.session)return;
-  if(!await showVerifiedStudent())return;
-  try{const previous=await request("status");await initializeAssessment(previous)}
-  catch(e){notice("verifiedMsg","Sesión institucional activa. Puedes entrar cuando el docente habilite la evaluación.",true)}
- }catch(e){notice("startMsg","No se pudo recuperar la sesión institucional.")}
+  const data=await request("status");
+  await initializeAssessment(data);
+ }catch(e){
+  if(e.message.includes("sesión")||e.message.includes("Sesión"))keepGuestSession(null);
+  notice("startMsg","No se pudo recuperar el intento: "+e.message);
+ }
 }
 async function ensureSupabase(){
  if(supabase)return supabase;
@@ -380,7 +337,7 @@ function renderRoster(students){
   s.attempt?.numeric_score??"Pendiente",
   s.attempt?.final_score??"Pendiente"
  ]);
- $("roster").replaceChildren(table(["Correo verificado","Intento","Fecha de inicio","Nota numérica","Nota final"],rows));
+ $("roster").replaceChildren(table(["Correo declarado","Intento","Fecha de inicio","Nota numérica","Nota final"],rows));
 }
 async function loadResults(){
  $("resultsTable").textContent="Consultando resultados...";

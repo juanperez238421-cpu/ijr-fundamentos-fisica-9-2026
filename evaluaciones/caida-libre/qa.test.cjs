@@ -99,7 +99,7 @@ test("server-only file upload checks size, signature, verified JWT and deadline"
  assert.match(api,/image\/png/);
  assert.match(api,/image\/webp/);
  assert.match(api,/rawFile\.size>EVIDENCE_MAX_BYTES/);
- assert.match(api,/const a=await asStudent\(req\),s=await settings\(\)/);
+ assert.match(api,/const a=await asStudent\(\{attempt_id:form\.get\("attempt_id"\),session_token:form\.get\("session_token"\)\}\),s=await settings\(\)/);
  assert.match(api,/Date\.now\(\)>=Date\.parse\(a\.deadline_at\)/);
  assert.match(api,/uploadEvidence\(req,origin\)/);
  assert.match(api,/EVIDENCE_STORAGE_FAILED/);
@@ -116,44 +116,54 @@ test("no reasoning text is automatically graded; teacher reviews private file",(
 });
 
 
-const emailMigration=fs.readFileSync(path.join(base,
- "../../supabase/migrations/20261103_physics9_freefall_institutional_email_v3.sql"),"utf8");
-const QA_EMAIL="qa.caidalibre.2026@ijr.edu.co"; // Synthetic identifier only; mailbox must be provisioned by school IT.
-test("only verified school domain mailboxes are eligible",()=>{
+
+const directEmailMigration=fs.readFileSync(path.join(base,
+ "../../supabase/migrations/20261103_physics9_freefall_declared_email_v4.sql"),"utf8");
+const QA_EMAIL="qa.caidalibre.2026@ijr.edu.co";
+test("exact institution email suffix; no external or fake subdomains",()=>{
  const re=/^[a-z0-9][a-z0-9._%+-]*@ijr[.]edu[.]co$/;
  assert.equal(re.test(QA_EMAIL),true);
- for(const bad of [
-  "name@gmail.com","name@ijr.edu.co.evil.test","name@alumnos.ijr.edu.co",
-  "name@fakeijr.edu.co","name@ijr.edu.co ","name@ijr-edu.co"
- ])assert.equal(re.test(bad),false,bad);
+ for(const bad of ["name@gmail.com","name@ijr.edu.co.evil.test","name@alumnos.ijr.edu.co",
+  "name@fakeijr.edu.co","name@ijr.edu.co ","name@ijr-edu.co"])assert.equal(re.test(bad),false,bad);
+ assert.match(js,/SCHOOL_EMAIL_RE/);
  assert.match(api,/SCHOOL_EMAIL_RE/);
- assert.match(api,/email_confirmed_at/);
- assert.match(api,/auth\.getUser\(token\)/);
- assert.match(api,/identity\.email/);
- assert.doesNotMatch(api,/p\.code/);
- assert.doesNotMatch(api,/p\.email/);
+ assert.match(api,/normalizedEmail\(p\.email\)/);
 });
-test("Supabase passwordless email sign in with confirmed Auth JWT",()=>{
+test("no email verification code, OTP, magic link or student Supabase Auth",()=>{
  assert.match(html,/id="studentEmail"/);
  assert.match(html,/type="email"/);
- assert.match(html,/id="otpPanel"/);
- assert.match(html,/id="verifyForm"/);
- assert.match(js,/auth\.signInWithOtp\(/);
- assert.match(js,/auth\.verifyOtp\(/);
- assert.match(js,/getSession\(\)/);
- assert.match(js,/headers\.authorization="Bearer "/);
- assert.match(js,/SCHOOL_EMAIL_RE/);
- assert.doesNotMatch(js,/getToken\(\)|setToken\(/);
- assert.doesNotMatch(html,/id="inviteCode"/);
- assert.doesNotMatch(html,/id="issueBtn"/);
- assert.doesNotMatch(api,/action==="admin_issue"/);
- assert.doesNotMatch(api,/action==="admin_revoke"/);
+ assert.match(html,/id="startBtn"/);
+ assert.match(html,/Ingresar/);
+ assert.doesNotMatch(html,/id="otpPanel"|id="emailOtp"|id="verifyForm"|id="verifiedPanel"|id="inviteCode"/);
+ assert.doesNotMatch(js,/signInWithOtp|verifyOtp|ensureStudentAuth|email_confirmed_at|emailRedirectTo/);
+ assert.doesNotMatch(api,/studentIdentity|email_confirmed_at|auth\.getUser\(token\).*student/);
+ assert.match(js,/request\("start"/);
+ assert.match(api,/auth_mode:"declared_institutional_email_no_verification"/);
 });
-test("one attempt per verified email and legacy history preserved",()=>{
- assert.match(emailMigration,/alter column invite_id drop not null/);
- assert.match(emailMigration,/unique index if not exists physics9_ff_unique_email_v3/);
- assert.match(emailMigration,/unique index if not exists physics9_ff_unique_auth_user_v3/);
- assert.match(emailMigration,/institutional_email ~/);
- assert.match(api,/\.eq\("institutional_email",identity\.email\)/);
- assert.match(api,/invite_id:null,auth_user_id:identity\.id,institutional_email:identity\.email/);
+test("resumable but non-transferable internal 256-bit browser session",()=>{
+ assert.match(js,/sessionStorage\.setItem\(GUEST_SESSION_KEY/);
+ assert.match(js,/sessionStorage\.getItem\(GUEST_SESSION_KEY/);
+ assert.match(js,/sessionStorage\.removeItem\(GUEST_SESSION_KEY/);
+ assert.match(js,/session_token:credentials\.session_token/);
+ assert.match(api,/const token=randHex\(32\)/);
+ assert.match(api,/session_hash:await sha\(token\)/);
+ assert.match(api,/validGuestSession\(p\.session_token\)/);
+ assert.match(api,/\.eq\("session_hash",sessionHash\)/);
+ assert.match(api,/EMAIL_ALREADY_REGISTERED_DIFFERENT_SESSION/);
+ assert.match(api,/resumed\.id!==old\.id/);
+ assert.match(api,/\.is\("auth_user_id",null\)/);
+ assert.match(api,/\.is\("invite_id",null\)/);
+});
+test("legacy records preserved and guest identity accepted only for exact school suffix",()=>{
+ assert.match(directEmailMigration,/drop constraint if exists physics9_ff_legacy_or_email_identity_v3/);
+ assert.match(directEmailMigration,/physics9_ff_identity_modes_v4/);
+ assert.match(directEmailMigration,/auth_user_id is null and institutional_email ~/);
+ assert.match(api,/invite_id:null,auth_user_id:null,institutional_email:email/);
+});
+test("teacher authentication remains mandatory while student login is email-only",()=>{
+ assert.match(js,/signInWithPassword/);
+ assert.match(api,/getAuthenticatorAssuranceLevel/);
+ assert.match(api,/TEACHER_MFA_REQUIRED/);
+ assert.doesNotMatch(html,/id="issueBtn"|id="studentBatch"/);
+ assert.match(js,/admin_evidence_link/);
 });
