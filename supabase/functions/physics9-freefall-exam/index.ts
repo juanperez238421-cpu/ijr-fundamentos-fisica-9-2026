@@ -40,7 +40,7 @@ function toBaseUnits(value:number,unit:string):number{
 }
 function validAnswerUnit(value:unknown):value is string {return typeof value==="string"&&ALL_UNITS.has(value);}
 function permittedUnit(field:string,unit:string):boolean{return UNIT_KIND[unit]===TYPE_BY_FIELD[field];}
-const evidencePublic=(e:Row|null)=>e?{name:e.original_name,size:e.size_bytes,mime_type:e.mime_type,uploaded_at:e.uploaded_at,sha256:e.sha256_hex}:null;
+const evidencePublic=(e:Row|null)=>e?{name:e.original_name,size:Number(e.size_bytes),mime_type:e.mime_type,uploaded_at:e.uploaded_at,sha256:e.sha256_hex}:null;
 
 function exactAnswer(q:Row,field:string):number {
  const h=Number(q.height_ft),v=Number(q.velocity_fts),g=Number(q.gravity_fts2),t=Number(q.observation_s);
@@ -275,8 +275,7 @@ async function uploadEvidence(req:Request,origin:string|null):Promise<Response>{
    return json({error:"EVIDENCE_SAVE_FAILED"},409,origin);
  }
  await record("procedure_evidence_uploaded","student",a.id,{
-  sha256:checksum,size:bytes.byteLength,mime:detected.mime,replaces_prior:!!(await db.from("physics9_ff_events_v1")
-   .select("id",{count:"exact",head:true}).eq("attempt_id",a.id).eq("event_type","procedure_evidence_uploaded")).count
+  sha256:checksum,size:bytes.byteLength,mime:detected.mime,version:"new_or_replaced"
  });
  return json({uploaded:true,evidence:evidencePublic(row)},200,origin);
 }
