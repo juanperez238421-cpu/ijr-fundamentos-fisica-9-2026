@@ -137,12 +137,31 @@ $("reasoning").addEventListener("input",()=>{dirty=true;$("saveMsg").textContent
 $("previousBtn").addEventListener("click",()=>goTo(Math.max(index-1,0)));
 $("nextBtn").addEventListener("click",()=>goTo(Math.min(index+1,2)));
 $("saveBtn").addEventListener("click",save);
+function setSubmitDialog(open){
+ const dialog=$("submitDialog");dialog.classList.toggle("hidden",!open);
+ dialog.setAttribute("aria-hidden",String(!open));
+ if(open){$("confirmStatus").textContent="";$("confirmSubmission").focus();}
+ else $("submitBtn").focus();
+}
 $("submitBtn").addEventListener("click",async()=>{
  if(dirty&&!await save())return;
- if(!confirm("¿Confirmas la entrega definitiva? No podrás editar luego."))return;
- $("submitBtn").disabled=true;notice("submitMsg","Registrando entrega...");
- try{const r=await request("submit",{...getToken(),revision:current.revision});current.state="submitted";finish(r)}
- catch(e){notice("submitMsg",e.message)}finally{if(current?.state==="active")$("submitBtn").disabled=false}
+ if(!current||current.state!=="active")return;
+ setSubmitDialog(true);
+});
+$("cancelSubmission").addEventListener("click",()=>setSubmitDialog(false));
+$("submitDialog").addEventListener("keydown",e=>{
+ if(e.key==="Escape"){e.preventDefault();setSubmitDialog(false)}
+});
+$("confirmSubmission").addEventListener("click",async()=>{
+ if(!current||current.state!=="active")return;
+ $("confirmSubmission").disabled=true;
+ notice("confirmStatus","Registrando entrega...");
+ try{
+  const r=await request("submit",{...getToken(),revision:current.revision});
+  current.state="submitted";setSubmitDialog(false);finish(r);
+ }catch(e){
+  notice("confirmStatus",e.message);
+ }finally{$("confirmSubmission").disabled=false}
 });
 $("receiptExit").addEventListener("click",()=>{setToken(null);current=null;$("inviteCode").value="";show("welcome");});
 setInterval(updateClock,1000);
