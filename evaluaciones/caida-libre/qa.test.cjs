@@ -60,3 +60,12 @@ test("grade calculation is 0 to 5 for 9 results",()=>{
   assert.ok(grade>=0&&grade<=5);
  }
 });
+test("submit confirmation is in page and not browser-native",()=>{
+ assert.match(html,/id="submitDialog"/);
+ assert.match(html,/id="confirmSubmission"/);
+ assert.match(html,/aria-modal="true"/);
+ assert.match(js,/setSubmitDialog\(true\)/);
+ assert.match(js,/confirmSubmission/);
+ assert.doesNotMatch(js,/if\(!confirm\("¿Confirmas la entrega definitiva/);
+ assert.match(css,/\.modal-layer/);
+});
