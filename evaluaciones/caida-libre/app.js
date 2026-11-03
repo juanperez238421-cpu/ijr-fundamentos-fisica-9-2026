@@ -29,7 +29,7 @@ async function verifiedStudent(){
  const client=await ensureStudentAuth();
  const {data,error}=await client.auth.getUser();
  const user=data?.user,email=String(user?.email||"").trim().toLowerCase();
- if(error||!user||!SCHOOL_EMAIL_RE.test(email)||(!user.email_confirmed_at&&!user.confirmed_at))return null;
+ if(error||!user||!SCHOOL_EMAIL_RE.test(email)||!user.email_confirmed_at)return null;
  return{user,email};
 }
 async function showVerifiedStudent(){
