@@ -22,4 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Node and numeric/scientific contracts
-        run: node --test evaluaciones/caida-libre/qa.test.cjs
+        run: |
+          node --check evaluaciones/caida-libre/app.js
+          node --test evaluaciones/caida-libre/qa.test.cjs
