@@ -1,8 +1,14 @@
 import {test,expect} from '@playwright/test';
 
 function pdfWithText(message){
- const escaped=message.replace(/[\\()]/g,'\\$&');
- const stream='BT /F1 11 Tf 40 730 Td ('+escaped+') Tj ET\n';
+ const words=message.trim().split(/\s+/), lines=[];let current='';
+ for(const word of words){
+  if(current.length+word.length+1>58){lines.push(current);current=word;}
+  else current+=(current?' ':'')+word;
+ }
+ if(current)lines.push(current);
+ const escapePdf=s=>s.replace(/[\\()]/g,'\\$&');
+ const stream='BT /F1 11 Tf 40 730 Td 17 TL\n'+lines.map((line,i)=>(i?'T* ':'')+'('+escapePdf(line)+') Tj').join('\n')+'\nET\n';
  const objs=[
   '<< /Type /Catalog /Pages 2 0 R >>',
   '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
