@@ -1,0 +1,3 @@
+PDF.js pdfjs-dist 4.10.38, Mozilla Foundation. Apache License 2.0.
+Vendored from https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/ .
+Source: https://github.com/mozilla/pdf.js . See LICENSE.txt.
