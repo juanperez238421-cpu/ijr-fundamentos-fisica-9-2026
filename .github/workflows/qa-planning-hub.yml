@@ -1,0 +1,60 @@
+name: QA Planning Hub
+on:
+  pull_request:
+    paths:
+      - 'laboratorio-planeaciones/**'
+      - '.github/workflows/qa-planning-hub.yml'
+  workflow_dispatch:
+jobs:
+  planning-hub:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        working-directory: laboratorio-planeaciones
+        run: |
+          node --check app.js
+          node --check sw.js
+          node --check curriculum-registry.mjs
+          node --check document-classifier.mjs
+          node --check academic-fields.mjs
+      - name: Unit tests
+        working-directory: laboratorio-planeaciones
+        run: node --test tests/*.test.mjs
+      - name: Python adapter tests
+        working-directory: laboratorio-planeaciones
+        run: python3 -m unittest discover -s tests -v
+
+  browser-smoke:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright
+        working-directory: laboratorio-planeaciones
+        run: |
+          npm install --no-save --ignore-scripts @playwright/test@1.56.1
+          npx playwright install chromium --with-deps
+      - name: Start local application
+        working-directory: laboratorio-planeaciones
+        run: |
+          python3 server/dev_server.py >/tmp/ijr-planning-test-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8765/ >/dev/null && exit 0; sleep 1; done
+          cat /tmp/ijr-planning-test-server.log
+          exit 1
+      - name: Browser end-to-end
+        working-directory: laboratorio-planeaciones
+        run: npx playwright test tests/ui-smoke.spec.mjs --reporter=line
