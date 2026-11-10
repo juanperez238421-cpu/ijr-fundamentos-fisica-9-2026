@@ -15,3 +15,9 @@ No hay carga del archivo a Supabase ni a proveedores externos: el PDF se procesa
 `python3 -m unittest discover -s tests -v`
 
 Antes del despliegue, validar además con PDF reales anonimizados y revisar regresiones de interfaz, reentrega, IndexedDB y caché PWA.
+
+## Asignaturas y grupos
+
+El formulario de carga incorpora un catálogo ampliado de materias, con la opción **Otra asignatura** para registrar una materia no listada. El grado académico permanece numérico (`grade`: 1 a 11), y el grupo se almacena de forma independiente (`group`: `A`, `B`, `C` o vacío) para no alterar las búsquedas de mallas ni los expedientes existentes. La interfaz presenta `9B` o `9.º` según el caso. Los valores quedan en el expediente JSON y pueden buscarse en la bandeja. Elegir una asignatura no crea una referencia curricular: únicamente está precargada Geometría 8.º, período III.
+
+Pruebas de campos académicos: `node --test tests/academic-fields.test.mjs`.
