@@ -1,0 +1,44 @@
+name: Import official IJR logo PNG
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/import-official-ijr-logo.yml'
+      - 'laboratorio-planeaciones/index.html'
+jobs:
+  import-png:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
+      - name: Obtain PNG from official school domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p laboratorio-planeaciones/assets
+          curl --fail --location --retry 2 --connect-timeout 12 --max-time 45 --user-agent 'Mozilla/5.0' 'https://ijr.edu.co/ijr/img/logo.png' --output laboratorio-planeaciones/assets/logo-ijr.png
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          p=Path('laboratorio-planeaciones/assets/logo-ijr.png')
+          data=p.read_bytes()
+          assert data[:8]==b'\x89PNG\r\n\x1a\n', 'Official source is not a PNG file'
+          assert 100 < len(data) < 1_000_000, 'Unexpected PNG size'
+          width,height=struct.unpack('>II',data[16:24])
+          assert 16<=width<=4096 and 16<=height<=4096, 'Unexpected logo resolution'
+          print('Verified institutional logo PNG: dimensions %dx%d; bytes %d'%(width,height,len(data)))
+          PY
+      - name: Commit binary to PR branch (no production changes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add laboratorio-planeaciones/assets/logo-ijr.png
+          if git diff --cached --quiet; then echo 'Logo unchanged'; exit 0; fi
+          git commit -m 'assets(planning): vendor genuine IJR logo.png [skip ci]'
+          git push origin HEAD:${{ github.head_ref }}
