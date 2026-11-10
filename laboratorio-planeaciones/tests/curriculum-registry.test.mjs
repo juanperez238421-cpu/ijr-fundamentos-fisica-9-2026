@@ -23,7 +23,7 @@ test('recognize singular malla curricular and plan de área titles',()=>{
  const m=inspectCurriculumPdf([{page:1,text:'Malla curricular institucional de Matemáticas para grado octavo. Desempeños y objetivos de aprendizaje, periodo tercero, además de competencias y recursos de clase.'}],{grade:'8',area:'Matemáticas',period:'III'});
  assert.equal(m.accepted,true);
  assert.ok(m.signals.includes('Malla curricular'));
- const p=inspectCurriculumPdf([{page:1,text:'Plan de área de Física para noveno grado. Contenidos, ejes temáticos y objetivos de aprendizaje, desempeños esperados.'}],scope);
+ const p=inspectCurriculumPdf([{page:1,text:'Plan de área de Física para noveno grado. Contenidos, ejes temáticos y objetivos de aprendizaje, desempeños esperados. Este documento institucional contiene orientaciones pedagógicas para la enseñanza y la evaluación a lo largo de los períodos académicos.'}],scope);
  assert.equal(p.accepted,true);
  assert.ok(p.signals.includes('Plan de área'));
 });
