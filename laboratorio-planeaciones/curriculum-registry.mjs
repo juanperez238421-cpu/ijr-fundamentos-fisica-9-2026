@@ -20,6 +20,8 @@ export function inspectCurriculumPdf(pages,scope){
     ['Contenidos',/\b(?:contenidos?|tematicas?|saberes?)\b/]
   ];
   const signals=groups.filter(([,rx])=>rx.test(txt)).map(([k])=>k);
+  // Guard against explicit negated mentions in generic reports (e.g. 'sin contenido de malla curricular').
+  if(/\b(?:sin|no contiene|no presenta|carece de)\b.{0,55}\b(?:malla curricular|plan de area)\b/.test(txt)&&!signals.some(v=>['Ejes curriculares','Estándares','Desempeños'].includes(v)))return {accepted:false,signals,warnings:['El propio texto indica que no aporta una malla o plan de área.']};
   if(/\b(?:doi|abstract|references|computational fluid dynamics|results and discussion)\b/.test(txt) && signals.length<4)
     return {accepted:false,signals,warnings:['Posible artículo científico, no una malla.']};
   if(signals.length<2||!signals.some(v=>['Malla curricular','Plan de área','Ejes curriculares','Estándares'].includes(v)))
