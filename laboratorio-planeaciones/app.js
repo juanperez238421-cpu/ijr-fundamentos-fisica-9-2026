@@ -1,4 +1,5 @@
 import { classifyDocument } from './document-classifier.mjs';
+import {CURRICULUM_KEY, curriculumScope, inspectCurriculumPdf, displaySource} from './curriculum-registry.mjs';
 import { SUBJECTS, GROUPS, normalizeSubject, normalizeGroup, gradeLabel } from './academic-fields.mjs';
 import * as pdfjs from './vendor/pdf.mjs';
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.mjs', import.meta.url).href;
@@ -8,7 +9,10 @@ const stamp=()=>new Date().toISOString(), fmt=s=>new Date(s).toLocaleString('es-
 const demo={id:'PL-001',title:'Áreas que habitamos',area:'Geometría',grade:'8',period:'III',author:'Docente de demostración',state:'en revisión',submitted:new Date(Date.now()-2*DAY).toISOString(),version:1,file:null,pages:[],notes:[],report:null,events:[]};
 demo.events=[{at:demo.submitted,actor:'Docente · demo',type:'Entrega recibida',text:'Versión 1. Inicio del plazo global de ocho días.'},{at:new Date(new Date(demo.submitted).getTime()+300000).toISOString(),actor:'Sistema · demo',type:'En revisión',text:'Ejemplo preparado para explorar la revisión humana. No se ha ejecutado un modelo de IA.'}];
 let db;try{db=JSON.parse(localStorage.getItem(KEY));}catch{}if(!db?.records)db={records:[demo],selected:'PL-001',role:'Coordinador académico'};
-let activePdf=null,sourcePdf=null,renderSeq=0,pendingAnchor=null,sourceTab='pei';
+let activePdf=null,sourcePdf=null,activeCurriculumPdf=null,activeCurriculumHash=null,renderSeq=0,pendingAnchor=null,sourceTab='pei',linkingNoteIndex=null;
+let curriculumRegistry={};try{curriculumRegistry=JSON.parse(localStorage.getItem(CURRICULUM_KEY))||{};}catch{curriculumRegistry={};}
+function mallaFor(r){return curriculumRegistry[curriculumScope(r.grade,r.area,r.period)]?.active||null;}
+function saveCurriculum(){localStorage.setItem(CURRICULUM_KEY,JSON.stringify(curriculumRegistry));}
 const rec=()=>db.records.find(r=>r.id===db.selected)||db.records[0];
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db));}catch{toast('No hay espacio de almacenamiento. Exporta el expediente antes de cerrar.');}};
 const event=(r,type,text,actor=db.role)=>{r.events.push({at:stamp(),actor,type,text,version:r.version});save();};
@@ -37,8 +41,69 @@ function openDB(){return new Promise((res,rej)=>{const q=indexedDB.open('ijr-pla
 async function fileStore(op,key,value){const d=await openDB();return new Promise((resolve,reject)=>{const tx=d.transaction('files',op==='get'?'readonly':'readwrite'),s=tx.objectStore('files'),q=op==='get'?s.get(key):op==='clear'?s.clear():s.put(value,key);let result;q.onsuccess=()=>result=q.result;tx.oncomplete=()=>{d.close();resolve(result);};tx.onerror=()=>{d.close();reject(tx.error);};});}
 async function readPDF(file){if(file.size>15*1024*1024)throw Error('El archivo supera 15 MB.');const data=await file.arrayBuffer();if(new TextDecoder().decode(data.slice(0,5))!=='%PDF-')throw Error('El archivo no tiene una cabecera PDF válida.');const pdf=await pdfjs.getDocument({data:new Uint8Array(data.slice(0)),isEvalSupported:false}).promise;if(pdf.numPages>80)throw Error('Máximo 80 páginas por prueba.');const pages=[];for(let i=1;i<=pdf.numPages;i++){const p=await pdf.getPage(i);const c=await p.getTextContent();pages.push({page:i,text:c.items.map(x=>x.str).join(' ')});}const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',data))).map(x=>x.toString(16).padStart(2,'0')).join('');return {pdf,data,pages,hash};}
 async function paint(pdf,page,canvas){const p=await pdf.getPage(page),width=canvas.parentElement.clientWidth||450,base=p.getViewport({scale:1}),view=p.getViewport({scale:Math.min(2,devicePixelRatio||1)*width/base.width});canvas.width=view.width;canvas.height=view.height;await p.render({canvasContext:canvas.getContext('2d'),viewport:view}).promise;}
-async function sourceContent(){const c=$('#sourceContent');if(!c)return;const r=rec();if(sourceTab==='malla'){c.innerHTML=(r.area.toLowerCase().includes('geometr')&&r.grade==='8'&&r.period==='III')?curriculum:'<div class="banner warn">Sin referencia curricular validada para este grado, área y período. El asesor debe incorporar la fuente oficial.</div>';return;}if(sourceTab==='otras'){c.innerHTML='<div class="source-excerpt"><h3>Plan de área y estándares</h3><p>No incorporados como corpus validado en esta demostración. Los estándares transcritos en una malla no sustituyen su comprobación en el documento oficial MEN.</p><p>Producción: versión, vigencia, grado, período, hash, página y aprobación del asesor por cada fuente.</p></div>';return;}c.innerHTML='<div class="doc-title">PEI 2026 · página original 41 <a href="docs/pei-extracto-p41.pdf" target="_blank" rel="noopener">Abrir PDF ↗</a></div><div class="document" id="sourceDocument"><canvas id="sourceCanvas"></canvas><div class="highlight" style="left:13%;top:35%;width:77%;height:26%"></div></div><p class="subtle">Resaltado editorial sobre el §2.5.3: enfoque humanista y activo. Es una referencia institucional, no un error de la planeación.</p>';
-try{sourcePdf??=await pdfjs.getDocument({url:'docs/pei-extracto-p41.pdf',isEvalSupported:false}).promise;if($('#sourceCanvas'))await paint(sourcePdf,1,$('#sourceCanvas'));}catch(e){if(c.isConnected)c.innerHTML='<p>No se pudo abrir el extracto. Usa el enlace al PDF o recarga cuando haya conexión.</p>';}}
+async function uploadCurriculumPdf(file){
+ const r=rec();if(!file)return;
+ const status=$('#curriculumStatus');
+ if(status)status.textContent='Validando la estructura del PDF curricular...';
+ let parsed=null;
+ try{
+  if(!['Coordinador académico','Asesor de área'].includes(db.role))throw Error('En esta demostración, selecciona la vista Coordinador o Asesor para vincular fuentes. No hay autenticación real.');
+  parsed=await readPDF(file);
+  const inspection=inspectCurriculumPdf(parsed.pages,{grade:r.grade,area:r.area,period:r.period});
+  if(!inspection.accepted)throw Error('El archivo no se identificó como malla o plan de área: '+inspection.warnings.join(' '));
+  await fileStore('put',parsed.hash,parsed.data);
+  const key=curriculumScope(r.grade,r.area,r.period),old=curriculumRegistry[key];
+  const entry={hash:parsed.hash,name:file.name,grade:r.grade,area:r.area,period:r.period,bytes:file.size,pages:parsed.pages.length,status:'pendiente',at:stamp(),signals:inspection.signals,warnings:inspection.warnings,source:'PDF aportado localmente; no verificado por la institución'};
+  curriculumRegistry[key]={active:entry,history:old?[...(old.history||[]),old.active].filter(Boolean):[]};
+  try{saveCurriculum();}catch(e){if(old)curriculumRegistry[key]=old;else delete curriculumRegistry[key];throw e;}
+  if(activeCurriculumPdf&&activeCurriculumHash!==parsed.hash){try{await activeCurriculumPdf.destroy();}catch{}activeCurriculumPdf=null;activeCurriculumHash=null;}
+  event(r,'Referencia curricular aportada','PDF: '+file.name+'; SHA-256: '+parsed.hash+'. Estado: pendiente de validación institucional.','Sistema');
+  sourceTab='malla';await sourceContent();renderNotes();
+  toast('Malla vinculada al grado, asignatura y período. Falta validación institucional.');
+ }catch(e){if(status&&status.isConnected)status.textContent=e.message;toast(e.message);}
+ finally{if(parsed)try{await parsed.pdf.destroy();}catch{}}
+}
+async function sourceContent(){
+ const c=$('#sourceContent');if(!c)return;
+ const r=rec();
+ if(sourceTab==='malla'){
+  const ref=mallaFor(r),key=curriculumScope(r.grade,r.area,r.period);
+  let html='<div class="source-excerpt"><h3>Referencia de malla curricular</h3><p><strong>Ámbito:</strong> '+esc(r.area)+' · Grado '+esc(r.grade)+'.º · Período '+esc(r.period)+'. Aplica a los grupos A, B y C salvo que la institución establezca otra malla.</p>';
+  if(ref){
+   html+='<p><strong>'+esc(displaySource(ref))+'</strong></p><p>'+esc(ref.name)+' · SHA-256: <code>'+esc(ref.hash.slice(0,14))+'…</code></p><p>'+esc(ref.source)+'</p>';
+   html+='<ul>'+ref.warnings.map(w=>'<li>'+esc(w)+'</li>').join('')+'</ul></div>';
+   html+='<div class="doc-title"><span>PDF original · '+esc(ref.pages)+' páginas</span><select id="mallaPageSelect" aria-label="Página de la malla">'+Array.from({length:ref.pages},(_,i)=>'<option value="'+(i+1)+'">Pág. '+(i+1)+'</option>').join('')+'</select></div>';
+   html+='<div id="sourceDocument" class="document notranslate" data-source-kind="malla" translate="no" aria-label="Malla original; clic para anotar"><canvas id="sourceCanvas"></canvas></div>';
+  }else{
+   html+='<div class="banner warn"><strong>Sin malla institucional aportada</strong><span>No se puede confirmar alineación curricular por ausencia de una fuente original para esta combinación. No se sustituye con documentos de otra institución.</span></div></div>';
+  }
+  html+='<div class="source-upload"><label for="mallaPdfFile">Vincular o actualizar PDF original de malla / plan de área</label><input id="mallaPdfFile" type="file" accept="application/pdf,.pdf" aria-describedby="curriculumStatus"><p class="subtle">Este registro se guarda solo en este navegador, para el grado/asignatura/período seleccionados. El archivo debe ser revisado y aprobado institucionalmente antes de usarlo como fuente oficial.</p><p id="curriculumStatus" role="status"></p></div>';
+  c.innerHTML=html;
+  const file=$('#mallaPdfFile');if(file)file.onchange=e=>uploadCurriculumPdf(e.target.files?.[0]);
+  if(ref){
+   const select=$('#mallaPageSelect');const sourceCanvas=$('#sourceCanvas');
+   if(select)select.onchange=async()=>{if(activeCurriculumPdf&&sourceCanvas?.isConnected){await paint(activeCurriculumPdf,Number(select.value),sourceCanvas);renderNotes();}};
+   try{
+    if(!activeCurriculumPdf||activeCurriculumHash!==ref.hash){
+     const data=await fileStore('get',ref.hash);
+     if(!data)throw Error('PDF de malla no disponible en este dispositivo. Debe vincularse nuevamente.');
+     activeCurriculumPdf=await pdfjs.getDocument({data:new Uint8Array(data),isEvalSupported:false}).promise;activeCurriculumHash=ref.hash;
+    }
+    if(sourceTab==='malla'&&sourceCanvas?.isConnected){await paint(activeCurriculumPdf,1,sourceCanvas);renderNotes();}
+   }catch(e){if($('#curriculumStatus'))$('#curriculumStatus').textContent=e.message;}
+  }else renderNotes();
+  return;
+ }
+ if(sourceTab==='otras'){
+  c.innerHTML='<div class="source-excerpt"><h3>Documentos de referencia</h3><p>El PEI 2026 es una fuente institucional real; no sustituye las mallas específicas. Solo puede verificarse alineación curricular con la malla original, su vigencia, grado, asignatura y período.</p><p>Las referencias MEN o documentos de otras instituciones no se presentan como mallas del IJR.</p></div>';
+  return;
+ }
+ c.innerHTML='<div class="doc-title"><span>PEI IJR 2026 · original p. 41 · extracto</span><a href="docs/pei-extracto-p41.pdf" target="_blank" rel="noopener">Abrir PDF ↗</a></div><div class="document notranslate" id="sourceDocument" data-source-kind="pei" translate="no" aria-label="PEI 2026; clic para anotar"><canvas id="sourceCanvas"></canvas><div class="highlight" style="left:13%;top:35%;width:77%;height:26%"></div></div><p class="subtle">Fuente institucional PEI 2026, §2.5.3, página original 41. El resaltado no es una observación; haz clic en el PDF para anotar.</p>';
+ try{
+  sourcePdf??=await pdfjs.getDocument({url:'docs/pei-extracto-p41.pdf',isEvalSupported:false}).promise;
+  if(sourceTab==='pei'&&$('#sourceCanvas')){await paint(sourcePdf,1,$('#sourceCanvas'));renderNotes();}
+ }catch(e){if(c.isConnected)c.innerHTML='<p>No se pudo abrir el PEI. Abre el PDF desde el enlace disponible en la página.</p>';}
+}
 function renderNotes(){const r=rec(),el=$('#noteList');if(!el)return;el.innerHTML=r.notes.length?r.notes.map((n,i)=>`<div class="note-card"><button class="btn small" data-note="${i}">${i+1} · ${n.document==='fuente'?'PEI':'Planeación'} · p. ${n.page} · v${n.version}</button><p>${esc(n.text)}</p><small>${esc(n.actor)} · ${fmt(n.at)}</small></div>`).join(''):'<p class="subtle">Haz clic sobre la planeación o usa «Añadir observación».</p>';document.querySelectorAll('#planDocument .pin').forEach(x=>x.remove());r.notes.forEach((n,i)=>{if(n.version!==r.version||n.page!==Number($('#pageSelect')?.value||1)||n.document==='fuente')return;const b=document.createElement('button');b.className='pin';b.textContent=i+1;b.style.left=n.x*100+'%';b.style.top=n.y*100+'%';b.title=n.text;b.setAttribute('aria-label',`Señalamiento ${i+1}: ${n.text}`);b.onclick=e=>{e.stopPropagation();toast(n.text);};$('#planDocument')?.append(b);});}
 function report(){const r=rec(),el=$('#reportContent');if(!el)return;if(!r.report){el.innerHTML='<div class="callout">Aún no hay informe. La comprobación de prueba busca términos en el texto; la IA local requiere el adaptador instalado.</div>';return;}el.innerHTML=`<div class="callout">${esc(r.report.scope||'Revisar evidencia y fuentes antes de decidir.')}</div>${r.report.findings.map((f,i)=>`<div class="note-card"><strong>${i+1}. ${esc(f.title)}</strong><p>${esc(f.detail)}</p><small>${esc(f.source||'Sin referencia validada')} · p. ${f.page||1}</small><div class="actions" style="margin-top:8px"><button class="btn small" data-evidence="${f.page||1}">Ver evidencia</button>${f.verdict?`<small>${esc(f.verdict)}</small>`:`<button class="btn small" data-finding="${i}" data-verdict="Confirmado">Confirmar</button><button class="btn small" data-finding="${i}" data-verdict="Descartado">Descartar</button>`}</div></div>`).join('')}`;}
 async function loadActive(){const seq=++renderSeq,r=rec();activePdf=null;if(!r.file){renderNotes();return;}try{const data=await fileStore('get',r.file.hash);if(!data)throw Error('El PDF no está en este dispositivo. Usa «Volver a abrir PDF».');const pdf=await pdfjs.getDocument({data:new Uint8Array(data),isEvalSupported:false}).promise;if(seq!==renderSeq)return;activePdf=pdf;await paint(pdf,1,$('#planCanvas'));renderNotes();}catch(e){if($('#docStatus'))$('#docStatus').textContent=e.message;}}
