@@ -11,8 +11,8 @@ export function inspectCurriculumPdf(pages,scope){
   const txt=normalizeCurriculumText(raw);
   if(txt.length<120)return {accepted:false,signals:[],warnings:['PDF sin texto suficiente: verificar OCR o contenido.']};
   const groups=[
-    ['Malla curricular',/\bmallas? curriculares?\b/],
-    ['Plan de área',/\bplanes? de area\b/],
+    ['Malla curricular',/\bmallas? curricular(?:es)?\b/],
+    ['Plan de área',/\bplan(?:es)? de area\b/],
     ['Ejes curriculares',/\bejes? (?:curriculares|tematicos|de aprendizaje)\b/],
     ['Estándares',/\bestandares?(?: basicos?)? de competencias?\b/],
     ['Desempeños',/\b(?:desempenos?|derechos basicos de aprendizaje|dba)\b/],
