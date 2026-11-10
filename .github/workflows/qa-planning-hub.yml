@@ -33,7 +33,7 @@ jobs:
         run: python3 -m unittest discover -s tests -v
 
   browser-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
