@@ -17,3 +17,7 @@
 - DOCX/OCR: descritos para arquitectura de producción; en la demo solo PDF con texto para análisis.
 
 Los registros QA quedaron solo en el navegador de prueba. No se publican como datos iniciales.
+
+## Publicación verificada
+
+GitHub Pages devolvió HTTP 200 y el flujo `pages build and deployment` terminó con éxito. Se abrió la página publicada en Chrome, se verificó navegación a revisión y el mensaje explícito de que GitHub Pages no ejecuta la IA local. Se verificaron también exportación JSON y los seis wireframes. Captura real de la bandeja publicada en `preview.png`.
