@@ -1,0 +1,33 @@
+name: QA Planning Hub
+on:
+  pull_request:
+    paths:
+      - 'laboratorio-planeaciones/**'
+      - '.github/workflows/qa-planning-hub.yml'
+  workflow_dispatch:
+jobs:
+  planning-hub:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        working-directory: laboratorio-planeaciones
+        run: |
+          node --check app.js
+          node --check sw.js
+          node --check curriculum-registry.mjs
+          node --check document-classifier.mjs
+          node --check academic-fields.mjs
+      - name: Unit tests
+        working-directory: laboratorio-planeaciones
+        run: node --test tests/*.test.mjs
+      - name: Python adapter tests
+        working-directory: laboratorio-planeaciones
+        run: python3 -m unittest discover -s tests -v
